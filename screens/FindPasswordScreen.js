@@ -5,24 +5,24 @@ import { Image } from 'expo-image';
 
 const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
 
-export default function LoginScreen({ navigation }) {
- 
+export default function FindPasswordScreen({ navigation }) {
+  
   const handleNavigate = () => {
-    navigation.navigate('FindPasswordScreen');
+    navigation.navigate('SetPassWordScreen');
   }
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+
+
+  const [number, setNumber] = useState(''); // 학번
+  const [DOB, setDOB] = useState(''); // DOB = Date Of Birth -> 생년월일
+  const [name, setName] = useState(''); // 이름 확인 
 
 
   useEffect(() => {
     navigation.setOptions({ headerShown: false }); // 헤더 숨기기
   }, [navigation]);
 
+  
 
-  const handleLogin = () => {
-    // 로그인 로직
-    console.log('로그인:', email, password);
-  };
 
   return (
     <View style={styles.container}>
@@ -38,40 +38,37 @@ export default function LoginScreen({ navigation }) {
       
       <Text style={styles.title}>한성대숲</Text>
 
-      {/* 로그인 입력 필드 */}
+      {/* 학번 입력 필드 */}
+      <Text style={styles.label}>학번</Text>
       <TextInput
         style={styles.input}
-        placeholder="이메일"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
+        placeholder="학번을 입력하세요"
+        value={number}
+        onChangeText={setNumber}
+        keyboardType="numeric"
         autoCapitalize="none"
       />
+      <Text style={styles.label}>생년월일</Text>
       <TextInput
         style={styles.input}
-        placeholder="비밀번호"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
+        placeholder="생년월일 ex> 980316"
+        value={DOB}
+        onChangeText={setDOB}
+        
       />
+      <Text style={styles.label}>이름 확인</Text>
+      <TextInput style={styles.input}
+      placeholder="이름을 입력하세요"
+      value={name}
+      onChangeText={setName}
+      />
+        
+      
 
-      {/* 로그인 버튼 */}
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.buttonText}>로그인</Text>
+      {/* 확인 버튼 */}
+      <TouchableOpacity style={styles.confirmButton} onPress={handleNavigate}>
+        <Text style={styles.buttonText}>확인</Text>
       </TouchableOpacity>
-      <View style={{ width: '90%', alignItems: 'flex-start', paddingHorizontal: '10%' }}> 
-     <Text style={styles.linkText} onPress={handleNavigate}>
-          ForgotPassword?
-     </Text>
-     </View>
-     
-     
-      {/*회원가입 버튼*/}
-      <View style={{ width: '100%', alignItems: 'flex-end', paddingHorizontal: '10%' }}>
-  <TouchableOpacity style={[styles.registerButton, { width: '40%' }]} onPress={handleLogin}>
-    <Text style={styles.buttonText}>회원가입</Text>
-  </TouchableOpacity>
-</View>
 
       
     </View>
@@ -98,6 +95,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 30, // 텍스트와 입력 필드 간격
   },
+  label: {
+    width: '80%',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
   input: {
     width: '80%',
     height: 50,
@@ -107,7 +110,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
   },
-  loginButton: {
+  confirmButton: {
     width: '80%',
     height: 50,
     backgroundColor: 'deepskyblue',
@@ -117,21 +120,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
-  registerButton:{
-    width: '20%',
-    height: 40,
-    backgroundColor: 'deepskyblue',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    
-  },
-  linkText:{
-    color: 'blue',
-    textDecorationLine: 'underline',
-    marginTop: 20,
-   
-  },
   buttonText: {
     color: 'white',
     fontSize: 18,
