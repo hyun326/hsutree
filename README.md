@@ -10,8 +10,12 @@
     npm install expo-font
     npm install expo-image
     npm install status-bar
+    npm install expo-status-bar
     npm install navigation/native-stack
+    npm install @react-navigation/native
     npm install react-native-dropdown-picker
+    npm install @react-navigation/stack
+
 
 -----
 <프로그램 실행 방법>
