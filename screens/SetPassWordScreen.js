@@ -8,7 +8,7 @@ const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWX
 export default function SetPassWordScreen ({ navigation }) {
   
     const handleNavigate = () => {
-        navigation.navigate('SetPassWordScreen'); // 나중에 비밀번호가 변경되고 데이터베이스에 저장하는 부분 
+        navigation.navigate('SetPassWordScreen'); // 나중에 비밀번호가 변경되고 데이터베이스에 저장하는 부분 (아직 구현안됨)
       }
 
 

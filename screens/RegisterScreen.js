@@ -5,29 +5,24 @@ import { Image } from 'expo-image';
 
 const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
 
-export default function LoginScreen({ navigation }) {
- 
+export default function FindPasswordScreen({ navigation }) { //회원가입창 1
+  
   const handleNavigate = () => {
-    navigation.navigate('FindPasswordScreen');
+    navigation.navigate('SelectListScreen'); // 회원가입 다음 창으로 넘어가는 로직 구현해야함 (아직 구현안됨)
   }
 
-  const RegisterNavigate = () => {
-    navigation.navigate('RegisterScreen');
-  }
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [number, setNumber] = useState(''); // 입학년도
+  const [school, setSchool] = useState(''); //학교 이름 
+  
 
 
   useEffect(() => {
     navigation.setOptions({ headerShown: false }); // 헤더 숨기기
   }, [navigation]);
 
+  
 
-  const handleLogin = () => {
-    // 로그인 로직
-    console.log('로그인:', email, password); // 로그인 로직도 아직 구현 안됨.
-  };
 
   return (
     <View style={styles.container}>
@@ -43,40 +38,32 @@ export default function LoginScreen({ navigation }) {
       
       <Text style={styles.title}>한성대숲</Text>
 
-      {/* 로그인 입력 필드 */}
+      {/* 입학년도 입력 필드 */}
+      <Text style={styles.label}>입학년도</Text>
       <TextInput
         style={styles.input}
-        placeholder="이메일"
-        value={email}
-        onChangeText={setEmail}
-        keyboardType="email-address"
+        placeholder="연도 선택(학번)"
+        value={number}
+        onChangeText={setNumber}
+        keyboardType="numeric"
         autoCapitalize="none"
       />
+      <Text style={styles.label}>학교</Text>
       <TextInput
         style={styles.input}
-        placeholder="비밀번호"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
+        placeholder="학교 이름을 검색하세요."
+        value={school}
+        onChangeText={setSchool}
+        
       />
+    
+        
+      
 
-      {/* 로그인 버튼 */}
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.buttonText}>로그인</Text>
+      {/* 확인 버튼 */}
+      <TouchableOpacity style={styles.NextButton} onPress={handleNavigate}>
+        <Text style={styles.buttonText}>다음</Text>
       </TouchableOpacity>
-      <View style={{ width: '90%', alignItems: 'flex-start', paddingHorizontal: '10%' }}> 
-     <Text style={styles.linkText} onPress={handleNavigate}>
-          ForgotPassword?
-     </Text>
-     </View>
-     
-     
-      {/*회원가입 버튼*/}
-      <View style={{ width: '100%', alignItems: 'flex-end', paddingHorizontal: '10%' }}>
-  <TouchableOpacity style={[styles.registerButton, { width: '40%' }]} onPress={RegisterNavigate}>
-    <Text style={styles.buttonText}>회원가입</Text>
-  </TouchableOpacity>
-</View>
 
       
     </View>
@@ -103,6 +90,12 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 30, // 텍스트와 입력 필드 간격
   },
+  label: {
+    width: '80%',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
   input: {
     width: '80%',
     height: 50,
@@ -112,7 +105,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
   },
-  loginButton: {
+  NextButton: {
     width: '80%',
     height: 50,
     backgroundColor: 'deepskyblue',
@@ -122,21 +115,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 
-  registerButton:{
-    width: '20%',
-    height: 40,
-    backgroundColor: 'deepskyblue',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    
-  },
-  linkText:{
-    color: 'blue',
-    textDecorationLine: 'underline',
-    marginTop: 20,
-   
-  },
   buttonText: {
     color: 'white',
     fontSize: 18,
