@@ -15,6 +15,8 @@
     npm install @react-navigation/native
     npm install react-native-dropdown-picker
     npm install @react-navigation/stack
+    npm install firebase
+    npm install 하면 위에꺼 다 설치 됨
 
 
 -----
