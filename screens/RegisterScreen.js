@@ -12,8 +12,8 @@ export default function FindPasswordScreen({ navigation }) { //회원가입창 1
   }
 
 
-  const [number, setNumber] = useState(''); // 입학년도
-  const [school, setSchool] = useState(''); //학교 이름 
+  const [studentId, setStudentId] = useState(''); // 학번 상태 관리
+  const [name, setName] = useState(''); // 이름 
   
 
 
@@ -39,21 +39,21 @@ export default function FindPasswordScreen({ navigation }) { //회원가입창 1
       <Text style={styles.title}>한성대숲</Text>
 
       {/* 입학년도 입력 필드 */}
-      <Text style={styles.label}>입학년도</Text>
+      <Text style={styles.label}>학번</Text>
       <TextInput
         style={styles.input}
-        placeholder="연도 선택(학번)"
-        value={number}
-        onChangeText={setNumber}
+        placeholder="학번을 입력하세요"
+        value={studentId}
+        onChangeText={setStudentId}
         keyboardType="numeric"
         autoCapitalize="none"
       />
-      <Text style={styles.label}>학교</Text>
+      <Text style={styles.label}>이름</Text>
       <TextInput
         style={styles.input}
-        placeholder="학교 이름을 검색하세요."
-        value={school}
-        onChangeText={setSchool}
+        placeholder="이름을 입력하세요"
+        value={name}
+        onChangeText={setName}
         
       />
     
