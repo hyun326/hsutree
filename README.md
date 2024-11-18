@@ -41,6 +41,8 @@
     npm install react-native-dropdown-picker
     npm install @react-navigation/stack
     npm install firebase
+    npm install react-native-webview
+    npm install axios 
     npm install 하면 위에꺼 다 설치 됨
 
 ---
@@ -54,7 +56,7 @@ cd hsutree
 npm install
 
 ##### 프로그램 실행
-npm start
+npx expo start
 
 ##### 모바일 앱 실행
 Expo Go 앱에서 QR 코드를 스캔하여 앱 실행.
