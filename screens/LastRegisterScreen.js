@@ -12,9 +12,11 @@ export default function FindPasswordScreen({ navigation }) {
   }
 
 
-  const [number, setNumber] = useState(''); // 닉네임
-  const [DOB, setDOB] = useState(''); // DOB = Date Of Birth -> 생년월일
-  const [name, setName] = useState(''); // 이름 확인 
+  const [nickname, setNickname] = useState(''); // 닉네임
+  const [number, setNumber] = useState(''); // 학번
+  const [password, setPassword] = useState(''); // 비밀번호
+  const [passwordCheck, setPasswordCheck] = useState(''); // 비밀번호 확인
+  const [email, setEmail] = useState(''); // 이메일
 
 
   useEffect(() => {
@@ -38,6 +40,18 @@ export default function FindPasswordScreen({ navigation }) {
       
       <Text style={styles.title}>한성대숲</Text>
 
+      {/* 닉네임 입력 필드 */}
+      <Text style={styles.label}>닉네임</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="닉네임을 입력하세요"
+        value={nickname}
+        onChangeText={setNickname}
+        keyboardType="numeric"
+        autoCapitalize="none"
+      />
+
+
       {/* 학번 입력 필드 */}
       <Text style={styles.label}>학번</Text>
       <TextInput
@@ -48,26 +62,33 @@ export default function FindPasswordScreen({ navigation }) {
         keyboardType="numeric"
         autoCapitalize="none"
       />
-      <Text style={styles.label}>생년월일</Text>
+      <Text style={styles.label}>비밀번호</Text>
       <TextInput
         style={styles.input}
-        placeholder="생년월일 ex> 980316"
-        value={DOB}
-        onChangeText={setDOB}
+        placeholder="비밀번호를 입력하시오"
+        value={password}
+        onChangeText={setPassword}
         
       />
-      <Text style={styles.label}>이름 확인</Text>
+      <Text style={styles.label}>비밀번호 확인</Text>
       <TextInput style={styles.input}
-      placeholder="이름을 입력하세요"
-      value={name}
-      onChangeText={setName}
+      placeholder="비밀번호를 입력하세요"
+      value={passwordCheck}
+      onChangeText={setPasswordCheck}
+      />
+
+      <Text style={styles.label}>이메일</Text>
+      <TextInput style={styles.input}
+      placeholder="이메일을 입력하세요"
+      value={email}
+      onChangeText={setEmail}
       />
         
       
 
       {/* 확인 버튼 */}
-      <TouchableOpacity style={styles.confirmButton} onPress={handleNavigate}>
-        <Text style={styles.buttonText}>확인</Text>
+      <TouchableOpacity style={styles.RegisterButton} onPress={handleNavigate}>
+        <Text style={styles.buttonText}>가입</Text>
       </TouchableOpacity>
 
       
@@ -81,7 +102,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingTop: 100,
+    paddingTop: 50,
   },
   imageContainer: {
     marginBottom: 20, // 이미지와 텍스트 간격
@@ -110,7 +131,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
   },
-  confirmButton: {
+  RegisterButton: {
     width: '80%',
     height: 50,
     backgroundColor: 'deepskyblue',

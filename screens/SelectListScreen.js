@@ -9,7 +9,7 @@ const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWX
 export default function FindPasswordScreen({ navigation }) { //회원가입창 2
   
   const NextNavigate = () => {
-    navigation.navigate('SetPassWordScreen'); // 회원가입 다음 창으로 넘어가는 로직 구현해야함 (아직 구현안됨)
+    navigation.navigate('LastRegisterScreen'); // 회원가입 다음 창으로 넘어가는 로직 구현해야함 (아직 구현안됨)
   }
 
   const CancelNavigate = () => {
