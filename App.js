@@ -9,6 +9,9 @@ import SetPassWordScreen from './screens/SetPassWordScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import SelectListScreen from './screens/SelectListScreen';
 import LastRegisterScreen from './screens/LastRegisterScreen';
+import PostDetailScreen from './screens/PostDetailScreen';
+import AddPostScreen from './screens/AddPostScreen';
+import PostListScreen from './screens/PostListScreen';
 
 const Stack = createStackNavigator();
 
@@ -24,6 +27,9 @@ export default function App() {
           <Stack.Screen name="RegisterScreen" component={RegisterScreen} />
           <Stack.Screen name="SelectListScreen" component={SelectListScreen} />
           <Stack.Screen name="LastRegisterScreen" component={LastRegisterScreen} />
+          <Stack.Screen name="PostDetailScreen" component={PostDetailScreen} />
+          <Stack.Screen name="AddPostScreen" component={AddPostScreen} />
+          <Stack.Screen name="PostListScreen" component={PostListScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SignUpProvider>
