@@ -13,8 +13,15 @@ export default function LastRegisterScreen({ navigation }) {
 
   // Firestore에 데이터 저장
   const handleRegister = async () => {
+    // 비밀번호와 비밀번호 확인이 일치하지 않으면 경고 메시지 표시
+    if (signUpData.password !== signUpData.passwordConfirm) {
+      Alert.alert('오류', '비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+      return;
+    }
+
     try {
-      await setDoc(doc(db, 'users', signUpData.studentId), signUpData); // Firestore에 저장
+      // Firestore에 데이터 저장
+      await setDoc(doc(db, 'users', signUpData.studentId), signUpData);
       Alert.alert('회원가입 완료', '데이터가 성공적으로 저장되었습니다.');
       navigation.navigate('Login'); // 로그인 화면으로 이동
     } catch (error) {
