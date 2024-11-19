@@ -1,111 +1,112 @@
-import { StatusBar } from 'expo-status-bar';
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
+// 전역 상태 및 Firestore 가져오기
+import { useSignUp } from '../SignUpContext';
+import { db } from '../firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
 
 const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
 
-export default function FindPasswordScreen({ navigation }) { 
-  
-  const handleNavigate = () => {
-    navigation.navigate('SetPassWordScreen');
-  }
+export default function LastRegisterScreen({ navigation }) {
+  const { signUpData, setSignUpData } = useSignUp(); // 전역 상태 가져오기
 
-
-  const [nickname, setNickname] = useState(''); // 닉네임
-  const [number, setNumber] = useState(''); // 학번
-  const [password, setPassword] = useState(''); // 비밀번호
-  const [passwordCheck, setPasswordCheck] = useState(''); // 비밀번호 확인
-  const [email, setEmail] = useState(''); // 이메일
-
+  // Firestore에 데이터 저장
+  const handleRegister = async () => {
+    try {
+      await setDoc(doc(db, 'users', signUpData.studentId), signUpData); // Firestore에 저장
+      Alert.alert('회원가입 완료', '데이터가 성공적으로 저장되었습니다.');
+      navigation.navigate('Login'); // 로그인 화면으로 이동
+    } catch (error) {
+      Alert.alert('오류', '데이터 저장 중 문제가 발생했습니다.');
+    }
+  };
 
   useEffect(() => {
-    navigation.setOptions({ headerShown: false }); // 헤더 숨기기
+    // 네비게이션 바 숨김
+    navigation.setOptions({ headerShown: false });
   }, [navigation]);
 
-  
-
-
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* 이미지 렌더링 */}
       <View style={styles.imageContainer}>
         <Image
           style={styles.image}
-          source={require('../assets/logo.png')}
+          source={require('../assets/logo.png')} // 이미지 경로 확인
           placeholder={{ blurhash }}
           contentFit="cover"
           transition={1000}
         />
       </View>
-      
+
       <Text style={styles.title}>한성대숲</Text>
 
-      {/* 닉네임 입력 필드 */}
+      {/* 닉네임 입력 */}
       <Text style={styles.label}>닉네임</Text>
       <TextInput
         style={styles.input}
         placeholder="닉네임을 입력하세요"
-        value={nickname}
-        onChangeText={setNickname}
-        keyboardType="numeric"
-        autoCapitalize="none"
+        value={signUpData.nickname}
+        onChangeText={(value) => setSignUpData({ ...signUpData, nickname: value })}
       />
 
-
-      {/* 학번 입력 필드 */}
+      {/* 학번 입력 */}
       <Text style={styles.label}>학번</Text>
       <TextInput
         style={styles.input}
         placeholder="학번을 입력하세요"
-        value={number}
-        onChangeText={setNumber}
-        keyboardType="numeric"
-        autoCapitalize="none"
+        value={signUpData.studentId}
+        onChangeText={(value) => setSignUpData({ ...signUpData, studentId: value })}
       />
+
+      {/* 비밀번호 입력 */}
       <Text style={styles.label}>비밀번호</Text>
       <TextInput
         style={styles.input}
-        placeholder="비밀번호를 입력하시오"
-        value={password}
-        onChangeText={setPassword}
-        
+        placeholder="비밀번호를 입력하세요"
+        value={signUpData.password}
+        secureTextEntry
+        onChangeText={(value) => setSignUpData({ ...signUpData, password: value })}
       />
+
+      {/* 비밀번호 확인 */}
       <Text style={styles.label}>비밀번호 확인</Text>
-      <TextInput style={styles.input}
-      placeholder="비밀번호를 입력하세요"
-      value={passwordCheck}
-      onChangeText={setPasswordCheck}
+      <TextInput
+        style={styles.input}
+        placeholder="비밀번호를 다시 입력하세요"
+        value={signUpData.passwordConfirm}
+        secureTextEntry
+        onChangeText={(value) => setSignUpData({ ...signUpData, passwordConfirm: value })}
       />
 
+      {/* 이메일 입력 */}
       <Text style={styles.label}>이메일</Text>
-      <TextInput style={styles.input}
-      placeholder="이메일을 입력하세요"
-      value={email}
-      onChangeText={setEmail}
+      <TextInput
+        style={styles.input}
+        placeholder="이메일을 입력하세요"
+        value={signUpData.email}
+        onChangeText={(value) => setSignUpData({ ...signUpData, email: value })}
       />
-        
-      
 
-      {/* 확인 버튼 */}
-      <TouchableOpacity style={styles.RegisterButton} onPress={handleNavigate}>
+      {/* 가입 버튼 */}
+      <TouchableOpacity style={styles.registerButton} onPress={handleRegister}>
         <Text style={styles.buttonText}>가입</Text>
       </TouchableOpacity>
-
-      
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1, // ScrollView의 내용물 크기를 채움
     backgroundColor: 'white',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingTop: 50,
+    paddingVertical: 50, // 스크롤 여유를 위해 추가
   },
   imageContainer: {
-    marginBottom: 20, // 이미지와 텍스트 간격
+    marginBottom: 20,
   },
   image: {
     width: 150,
@@ -113,8 +114,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 40,
-    fontWeight: '500',
-    marginBottom: 30, // 텍스트와 입력 필드 간격
+    fontWeight: 'bold',
+    marginBottom: 30,
   },
   label: {
     width: '80%',
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
   },
-  RegisterButton: {
+  registerButton: {
     width: '80%',
     height: 50,
     backgroundColor: 'deepskyblue',
@@ -139,8 +140,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 10,
+    marginBottom: 20, // 추가 여백
   },
-
   buttonText: {
     color: 'white',
     fontSize: 18,
