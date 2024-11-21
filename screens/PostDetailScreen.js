@@ -1,8 +1,14 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function PostDetailScreen({ route, navigation }) {
   const { post } = route.params;
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: '', // 제목을 빈 문자열로 설정
+    });
+  }, [navigation]);
 
   return (
     <View style={styles.container}>

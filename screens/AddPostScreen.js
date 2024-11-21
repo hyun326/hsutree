@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -7,6 +7,13 @@ export default function AddPostScreen({ navigation }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [author, setAuthor] = useState('익명'); // 작성자 기본값
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerTitle: '', // 제목을 빈 문자열로 설정
+    });
+  }, [navigation]);
+
 
   const handleAddPost = async () => {
     if (!title || !content) {

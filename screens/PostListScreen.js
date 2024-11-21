@@ -7,6 +7,14 @@ export default function PostListScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
 
   useEffect(() => {
+    navigation.setOptions({
+      headerTitle: '', // 제목을 빈 문자열로 설정
+    });
+  }, [navigation]);
+
+
+
+  useEffect(() => {
     // Firestore에서 게시글 목록 가져오기
     const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
