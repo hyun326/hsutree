@@ -43,7 +43,7 @@ export default function LoginScreen({ navigation }) {
 
   // 비밀번호 찾기 화면으로 이동
   const handleNavigate = () => {
-    navigation.navigate('ScheduleScreen');
+    navigation.navigate('setPassWordScreen');
   };
 
   // 회원가입 화면으로 이동

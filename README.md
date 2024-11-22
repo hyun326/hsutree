@@ -42,7 +42,7 @@
     npm install @react-navigation/stack
     npm install firebase
     npm install react-native-webview
-    npm install axios 
+    npm install expo-location
     npm install 하면 위에꺼 다 설치 됨
 
 ---

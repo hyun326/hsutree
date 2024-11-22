@@ -13,6 +13,7 @@ import PostDetailScreen from './screens/PostDetailScreen';
 import AddPostScreen from './screens/AddPostScreen';
 import PostListScreen from './screens/PostListScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
+import MapScreen from './screens/MapScreen';
 
 const Stack = createStackNavigator();
 
@@ -32,6 +33,7 @@ export default function App() {
           <Stack.Screen name="AddPostScreen" component={AddPostScreen} />
           <Stack.Screen name="PostListScreen" component={PostListScreen} />
           <Stack.Screen name="ScheduleScreen" component={ScheduleScreen} />
+          <Stack.Screen name="MapScreen" component={MapScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SignUpProvider>
