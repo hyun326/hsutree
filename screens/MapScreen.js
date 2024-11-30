@@ -146,54 +146,61 @@ export default function MapScreen({ navigation }) {
 
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 10 }}>
 <MapView
   style={{ flex: 1 }}
   provider={Platform.OS === 'ios' ? null : PROVIDER_GOOGLE}
   region={region}
-  padding={{ top: 50, right: 30, bottom: 50, left: 20 }} // 지도 패딩 추가
+  onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
 >
+  {locations.map((location) => (
+    <Marker
+      key={location.id}
+      coordinate={{
+        latitude: location.latitude,
+        longitude: location.longitude,
+      }}
+      onPress={() => setSelectedMarker(location.id)} // 클릭된 마커 설정
+    >
+      {/* 마커 위에 타이틀과 커스텀 뷰 */}
+      <View style={{ alignItems: 'center', overflow: 'visible' }}>
+  <Text
+    style={{
+      fontSize: 9,
+      fontWeight: 'bold',
+      color: 'black',
+      textAlign: 'center',
+      flexWrap: 'wrap', // 텍스트 줄바꿈 허용
+    }}
+    numberOfLines={0}
+  >
+    {location.title}
+  </Text>
 
-        {locations.map((location) => (
-          <Marker
-            key={location.id}
-            coordinate={{
-              latitude: location.latitude,
-              longitude: location.longitude,
+        {/* 마커 커스텀 뷰 */}
+        <View
+          style={{
+            width: selectedMarker === location.id ? 20 : 20, // 클릭된 마커 크기
+            height: selectedMarker === location.id ? 20 : 20,
+            backgroundColor: selectedMarker === location.id ? 'blue' : 'red', // 클릭된 마커 색상
+            borderRadius: 80, // 원 모양
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <View
+            style={{
+              width: selectedMarker === location.id ? 5 : 5,
+              height: selectedMarker === location.id ? 5 : 5,
+              backgroundColor: 'white',
+              borderRadius: 10,
             }}
-            onPress={() => setSelectedMarker(location.id)} // 클릭된 마커 설정
-          >
-            {/* 마커 커스텀 뷰 */}
-            <View
-              style={{
-                width: selectedMarker === location.id ? 40 : 30, // 클릭된 마커 크기
-                height: selectedMarker === location.id ? 40 : 30,
-                backgroundColor: selectedMarker === location.id ? 'blue' : 'red', // 클릭된 마커 색상
-                borderRadius: 80, // 원 모양
-                justifyContent: 'center',
-                alignItems: 'center',
-              }}
-            >
-              <View
-                style={{
-                  width: selectedMarker === location.id ? 10 : 10,
-                  height: selectedMarker === location.id ? 10 : 10,
-                  backgroundColor: 'white',
-                  borderRadius: 10,
-                }}
-              />
-            </View>
-
-            {/* Callout 컴포넌트로 설명 표시 */}
-            <Callout>
-              <View style={{ width: 150, padding: 5 }}>
-                <Text style={{ fontWeight: 'bold', fontSize: 15 }}>{location.title}</Text>
-                <Text style={{ fontSize: 12, color: 'gray' }}>{location.description}</Text>
-              </View>
-            </Callout>
-          </Marker>
-        ))}
-      </MapView>
+          />
+        </View>
+      </View>
+    </Marker>
+  ))}
+</MapView>
     </View>
   );
 }
