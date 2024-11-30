@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Platform, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Platform, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 
 export default function MapScreen({ navigation }) {
@@ -17,13 +17,14 @@ export default function MapScreen({ navigation }) {
   });
 
   const [search, setSearch] = useState(''); // 검색 창 상태
-  const [selectedMarker, setSelectedMarker] = useState(null);
+  const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 마커 정보 저장
 
   const locations = [
     {
       id: 1,
       title: '창의관',
       description: '여기는 창의관입니다.',
+      facilities: ['Wi-Fi', 'Restrooms', 'Cafeteria'],
       latitude: 37.582138,
       longitude: 127.010805,
     },
@@ -31,6 +32,7 @@ export default function MapScreen({ navigation }) {
       id: 2,
       title: '낙산관',
       description: '여기는 낙산관입니다.',
+      facilities: ['Library', 'Study Room'],
       latitude: 37.582100,
       longitude: 127.011305,
     },
@@ -38,6 +40,7 @@ export default function MapScreen({ navigation }) {
       id: 3,
       title: '미래관',
       description: '여기는 미래관입니다.',
+      facilities: ['Lecture Halls', 'Wi-Fi'],
       latitude: 37.582548, 
       longitude: 127.010805, 
     },
@@ -45,6 +48,7 @@ export default function MapScreen({ navigation }) {
       id: 4,
       title: '우촌관',
       description: '여기는 우촌관입니다.',
+      facilities: ['Sports Center', 'Locker Rooms'],
       latitude: 37.583038, 
       longitude: 127.010605, 
     },
@@ -52,102 +56,21 @@ export default function MapScreen({ navigation }) {
       id: 5,
       title: '상상관',
       description: '여기는 상상관입니다.',
+      facilities: ['Auditorium', 'Parking'],
       latitude: 37.582648, 
       longitude: 127.010105, 
     },
-    {
-      id: 6,
-      title: '풋살장',
-      description: '여기는 풋살입니다.',
-      latitude: 37.582628, 
-      longitude: 127.009405, 
-    },
-    {
-      id: 7,
-      title: '잔디광장',
-      description: '여기는 잔디광장입니다.',
-      latitude: 37.582628, //위도
-      longitude: 127.009705, //경도
-    },
-    {
-      id: 8,
-      title: '진리관',
-      description: '여기는 잔리관입니다.',
-      latitude: 37.583028, //위도
-      longitude: 127.009575, //경도
-    },
-    {
-      id: 9,
-      title: '탐구관',
-      description: '여기는 탐구관입니다.',
-      latitude: 37.583448, //위도
-      longitude: 127.009135, //경도
-    },
-    {
-      id: 10,
-      title: '학군단',
-      description: '여기는 학군단입니다.',
-      latitude: 37.583178, //위도
-      longitude: 127.008915, //경도
-    },
-    {
-      id: 11,
-      title: '연구관',
-      description: '여기는 연구관입니다.',
-      latitude: 37.582288, //위도
-      longitude: 127.009785, //경도
-    },
-    {
-      id: 12,
-      title: '지선관',
-      description: '여기는 지선관입니다.',
-      latitude: 37.581998, //위도
-      longitude: 127.009785, //경도
-    },
-    {
-      id: 13,
-      title: '공학관A',
-      description: '여기는 공학관 A입니다.',
-      latitude: 37.581798, //위도
-      longitude: 127.009865, //경도
-    },
-    {
-      id: 14,
-      title: '공학관B',
-      description: '여기는 공학관 B입니다.',
-      latitude: 37.581498, //위도
-      longitude: 127.009585, //경도
-    },
-    {
-      id: 15,
-      title: '상상빌리지',
-      description: '여기는 상상빌리지입니다.',
-      latitude: 37.581498, //위도
-      longitude: 127.010005, //경도
-    },
-    {
-      id: 16,
-      title: '인성관',
-      description: '여기는 인성관입니다.',
-      latitude: 37.581938, 
-      longitude: 127.010805,
-    },
-    {
-      id: 17,
-      title: '학송관',
-      description: '여기는 학송관입니다.',
-      latitude: 37.583298, //위도
-      longitude: 127.009575, //경도
-    },
-
   ];
 
-  // 검색 기능: title과 description 기준으로 검색
+  // 검색 기능: title, description, 또는 facilities 기준으로 검색
   const handleSearch = () => {
     const location = locations.find(
       (loc) =>
         loc.title.includes(search.trim()) ||
-        loc.description.includes(search.trim())
+        loc.description.includes(search.trim()) ||
+        loc.facilities.some((facility) =>
+          facility.toLowerCase().includes(search.trim().toLowerCase())
+        )
     );
 
     if (location) {
@@ -156,7 +79,7 @@ export default function MapScreen({ navigation }) {
         latitude: location.latitude,
         longitude: location.longitude,
       });
-      setSelectedMarker(location.id); // 검색된 마커 선택
+      setSelectedMarker(location); // 검색된 마커 선택
     } else {
       alert('검색 결과가 없습니다.');
     }
@@ -168,7 +91,7 @@ export default function MapScreen({ navigation }) {
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
-          placeholder="장소나 설명 검색..."
+          placeholder="장소, 설명 또는 시설물 검색..."
           value={search}
           onChangeText={setSearch}
           onSubmitEditing={handleSearch} // 검색 버튼 누를 시 실행
@@ -189,7 +112,7 @@ export default function MapScreen({ navigation }) {
               latitude: location.latitude,
               longitude: location.longitude,
             }}
-            onPress={() => setSelectedMarker(location.id)} // 클릭된 마커 설정
+            onPress={() => setSelectedMarker(location)} // 클릭된 마커 설정
           >
             {/* 마커 커스텀 뷰 */}
             <View style={{ alignItems: 'center', overflow: 'visible' }}>
@@ -207,10 +130,10 @@ export default function MapScreen({ navigation }) {
               </Text>
               <View
                 style={{
-                  width: selectedMarker === location.id ? 20 : 20,
-                  height: selectedMarker === location.id ? 20 : 20,
+                  width: selectedMarker?.id === location.id ? 20 : 20,
+                  height: selectedMarker?.id === location.id ? 20 : 20,
                   backgroundColor:
-                    selectedMarker === location.id ? 'blue' : 'red',
+                    selectedMarker?.id === location.id ? 'blue' : 'red',
                   borderRadius: 80,
                   justifyContent: 'center',
                   alignItems: 'center',
@@ -218,8 +141,8 @@ export default function MapScreen({ navigation }) {
               >
                 <View
                   style={{
-                    width: selectedMarker === location.id ? 5 : 5,
-                    height: selectedMarker === location.id ? 5 : 5,
+                    width: selectedMarker?.id === location.id ? 5 : 5,
+                    height: selectedMarker?.id === location.id ? 5 : 5,
                     backgroundColor: 'white',
                     borderRadius: 10,
                   }}
@@ -229,6 +152,25 @@ export default function MapScreen({ navigation }) {
           </Marker>
         ))}
       </MapView>
+
+      {/* 하단 창 */}
+      {selectedMarker && (
+        <View style={styles.bottomSheet}>
+          <Text style={styles.title}>{selectedMarker.title}</Text>
+          <Text style={styles.description}>{selectedMarker.description}</Text>
+          <Text style={styles.facilities}>
+  시설물: {selectedMarker?.facilities ? selectedMarker.facilities.join(', ') : '정보 없음'}
+</Text>
+
+
+          {/* 버튼 추가 */}
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity style={styles.button}>
+              <Text style={styles.buttonText}>리뷰</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -256,5 +198,50 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     fontSize: 14,
+  },
+  bottomSheet: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 20,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 70,
+  },
+  description: {
+    fontSize: 14,
+    color: '#555',
+    marginBottom: 50,
+  },
+  facilities: {
+    fontSize: 14,
+    color: '#333',
+    marginBottom: 20,
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  button: {
+    backgroundColor: '#007BFF',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
