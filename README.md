@@ -43,6 +43,7 @@
     npm install firebase
     npm install react-native-webview
     npm install expo-location
+    npm install react-native-dialog
     npm install @react-navigation/native@6.1.18 @react-navigation/bottom-tabs@6.5.7 react-native-screens react-native-safe-area-context react-native-gesture-handler react-native-reanimated react-native-vector-icons 하단 탭 네비게이션
     npm install 하면 위에꺼 다 설치 됨
 
