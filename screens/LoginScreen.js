@@ -28,7 +28,7 @@ export default function LoginScreen({ navigation }) {
         // 비밀번호 비교
         if (userData.password === password) {
           console.log('로그인 성공:', userData);
-          navigation.navigate('PostListScreen'); // postlist 시험 // 로그인 성공 시 MapScreen으로 이동
+          navigation.navigate('MainWithTabs'); // MainWithTabs로 이동
         } else {
           Alert.alert('로그인 실패', '비밀번호가 일치하지 않습니다.');
         }
@@ -43,7 +43,7 @@ export default function LoginScreen({ navigation }) {
 
   // 비밀번호 찾기 화면으로 이동
   const handleNavigate = () => {
-    navigation.navigate('setPassWordScreen');
+    navigation.navigate('FindPasswordScreen');
   };
 
   // 회원가입 화면으로 이동
