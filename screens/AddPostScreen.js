@@ -6,18 +6,23 @@ import { db } from '../firebaseConfig';
 export default function AddPostScreen({ navigation }) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [author, setAuthor] = useState('익명'); // 작성자 기본값
+  const [author, setAuthor] = useState('익명');
+  const [password, setPassword] = useState(''); // 비밀번호 상태 추가
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: '', // 제목을 빈 문자열로 설정
+      headerTitle: '',
     });
   }, [navigation]);
-
 
   const handleAddPost = async () => {
     if (!title || !content) {
       Alert.alert('오류', '제목과 내용을 입력하세요.');
+      return;
+    }
+
+    if (password.length !== 4) {
+      Alert.alert('오류', '비밀번호는 4자리 숫자여야 합니다.');
       return;
     }
 
@@ -26,6 +31,7 @@ export default function AddPostScreen({ navigation }) {
         title,
         content,
         author,
+        password, // 비밀번호 저장
         timestamp: serverTimestamp(),
       });
       Alert.alert('완료', '게시글이 작성되었습니다.');
@@ -60,6 +66,17 @@ export default function AddPostScreen({ navigation }) {
         placeholder="작성자를 입력하세요 (기본값: 익명)"
         value={author}
         onChangeText={setAuthor}
+      />
+
+      <Text style={styles.label}>비밀번호</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="4자리 숫자 비밀번호"
+        value={password}
+        onChangeText={setPassword}
+        keyboardType="numeric"
+        secureTextEntry={true}
+        maxLength={4}
       />
 
       <TouchableOpacity style={styles.addButton} onPress={handleAddPost}>

@@ -1,18 +1,28 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import Dialog from 'react-native-dialog';
 
 export default function PostDetailScreen({ route, navigation }) {
   const { post } = route.params;
   const [comments, setComments] = useState([]);
   const commentInputRef = useRef('');
+  const [password, setPassword] = useState(''); // 비밀번호 상태
+  const [isPasswordDialogVisible, setIsPasswordDialogVisible] = useState(false); // 비밀번호 다이얼로그 상태
+  const [isPasswordCorrect, setIsPasswordCorrect] = useState(false); // 비밀번호 확인 여부
+  const [isDeleteConfirmDialogVisible, setIsDeleteConfirmDialogVisible] = useState(false); // 삭제 확인 다이얼로그 상태
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: '', // 제목을 빈 문자열로 설정
+      headerRight: () => (
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePostPress}>
+          <Text style={styles.deleteButtonText}>삭제</Text>
+        </TouchableOpacity>
+      ),
     });
-  }, [navigation]);
+  }, [navigation, post.id]);
 
   useEffect(() => {
     // Firestore에서 댓글 목록 가져오기
@@ -45,6 +55,38 @@ export default function PostDetailScreen({ route, navigation }) {
       Alert.alert('오류', '댓글 작성 중 문제가 발생했습니다.');
     }
   }, [post.id]);
+
+  const handlePasswordCheck = () => {
+    // 비밀번호는 숫자 4자리로 간주
+    if (password.length === 4) {
+      setIsPasswordCorrect(true);
+      setIsPasswordDialogVisible(false); // 비밀번호 다이얼로그 닫기
+      setIsDeleteConfirmDialogVisible(true); // 삭제 확인 다이얼로그 띄우기
+    } else {
+      setIsPasswordCorrect(false);
+      Alert.alert('오류', '잘못된 비밀번호입니다.');
+    }
+  };
+
+  const handleDeletePostPress = () => {
+    // 비밀번호 입력을 요구하는 다이얼로그를 띄운다
+    setIsPasswordDialogVisible(true);
+  };
+
+  const handleDeletePost = async () => {
+    try {
+      const postRef = doc(db, 'posts', post.id);
+      await deleteDoc(postRef);
+      Alert.alert('성공', '게시글이 삭제되었습니다.');
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('오류', '게시글 삭제 중 문제가 발생했습니다.');
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteConfirmDialogVisible(false); // 삭제 확인 다이얼로그 닫기
+  };
 
   return (
     <KeyboardAvoidingView
@@ -85,6 +127,29 @@ export default function PostDetailScreen({ route, navigation }) {
           )}
         />
       </View>
+
+      {/* 비밀번호 입력 다이얼로그 */}
+      <Dialog.Container visible={isPasswordDialogVisible}>
+        <Dialog.Title>비밀번호 입력</Dialog.Title>
+        <Dialog.Input
+          placeholder="4자리 숫자"
+          secureTextEntry
+          keyboardType="numeric"
+          maxLength={4}
+          value={password}
+          onChangeText={setPassword}
+        />
+        <Dialog.Button label="취소" onPress={() => setIsPasswordDialogVisible(false)} />
+        <Dialog.Button label="확인" onPress={handlePasswordCheck} />
+      </Dialog.Container>
+
+      {/* 삭제 확인 다이얼로그 */}
+      <Dialog.Container visible={isDeleteConfirmDialogVisible}>
+        <Dialog.Title>게시글 삭제 확인</Dialog.Title>
+        <Dialog.Description>게시글을 삭제하시겠습니까?</Dialog.Description>
+        <Dialog.Button label="취소" onPress={handleDeleteCancel} />
+        <Dialog.Button label="확인" onPress={handleDeletePost} />
+      </Dialog.Container>
     </KeyboardAvoidingView>
   );
 }
@@ -162,5 +227,15 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: 'white',
     fontSize: 14,
+  },
+  deleteButton: {
+    padding: 10,
+    backgroundColor: 'red',
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  deleteButtonText: {
+    color: 'white',
+    fontSize: 16,
   },
 });
