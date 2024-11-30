@@ -10,6 +10,7 @@ import RegisterScreen from './screens/RegisterScreen';
 import SelectListScreen from './screens/SelectListScreen';
 import LastRegisterScreen from './screens/LastRegisterScreen';
 import PostDetailScreen from './screens/PostDetailScreen';
+import AddPostScreen from './screens/AddPostScreen';
 import BottomTabNavigator from './navigation/BottomTabNavigator'; // 하단 네비게이션 연결
 
 const Stack = createStackNavigator();
@@ -29,6 +30,7 @@ export default function App() {
 
           {/* 게시물 관련 화면 */}
           <Stack.Screen name="PostDetailScreen" component={PostDetailScreen} />
+          <Stack.Screen name="AddPostScreen" component={AddPostScreen} />
 
           {/* 하단 네비게이션 포함된 화면 */}
           <Stack.Screen
