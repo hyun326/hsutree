@@ -1,216 +1,95 @@
 import React, { useState, useEffect } from 'react';
-import { View, Platform, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity,Platform } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { collection, getDocs } from 'firebase/firestore'; // Firestore 읽기 관련 함수
+import { db } from '../firebaseConfig';
 
 export default function MapScreen({ navigation }) {
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: '', // 제목을 빈 문자열로 설정
-    });
-  }, [navigation]);
-
+  const [locations, setLocations] = useState([]); // Firestore에서 가져온 데이터를 저장
   const [region, setRegion] = useState({
-    latitude: 37.582131, // 상상관의 중심 위도
-    longitude: 127.010305, // 상상관의 중심 경도
-    latitudeDelta: 0.0041, // 지도 확대/축소 정도
+    latitude: 37.582131, // 초기 지도 중심
+    longitude: 127.010305,
+    latitudeDelta: 0.0041,
     longitudeDelta: 0.0040,
   });
 
-  const [search, setSearch] = useState(''); // 검색 창 상태
+  const [search, setSearch] = useState('');
   const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 마커 정보 저장
   const [recentSearches, setRecentSearches] = useState([]); // 최근 검색어 저장
   const [showRecentSearches, setShowRecentSearches] = useState(false); // 최근 검색어 창 표시 여부
 
-  const locations = [
-    {
-      id: 1,
-      title: '창의관',
-      description: '여기는 창의관입니다.',
-      facilities: ['Wi-Fi', 'Restrooms', 'Cafeteria'],
-      latitude: 37.582138,
-      longitude: 127.010805,
-    },
-    {
-      id: 2,
-      title: '낙산관',
-      description: '여기는 낙산관입니다.',
-      facilities: ['Library', 'Study Room'],
-      latitude: 37.582100,
-      longitude: 127.011305,
-    },
-    {
-      id: 3,
-      title: '미래관',
-      description: '여기는 미래관입니다.',
-      facilities: ['Lecture Halls', 'Wi-Fi'],
-      latitude: 37.582548,
-      longitude: 127.010805,
-    },
-    {
-      id: 4,
-      title: '우촌관',
-      description: '여기는 우촌관입니다.',
-      facilities: ['Sports Center', 'Locker Rooms'],
-      latitude: 37.583038,
-      longitude: 127.010605,
-    },
-    {
-      id: 5,
-      title: '상상관',
-      description: '여기는 상상관입니다.',
-      facilities: ['Auditorium', 'Parking'],
-      latitude: 37.582648,
-      longitude: 127.010105,
-    },
-    {
-      id: 6,
-      title: '풋살장',
-      description: '여기는 풋살장입니다.',
-      facilities: ['Sports Field', 'Benches'],
-      latitude: 37.582628,
-      longitude: 127.009405,
-    },
-    {
-      id: 7,
-      title: '잔디광장',
-      description: '여기는 잔디광장입니다.',
-      facilities: ['Picnic Area', 'Wi-Fi'],
-      latitude: 37.582628,
-      longitude: 127.009705,
-    },
-    {
-      id: 8,
-      title: '진리관',
-      description: '여기는 진리관입니다.',
-      facilities: ['Lecture Halls', 'Cafeteria'],
-      latitude: 37.583028,
-      longitude: 127.009575,
-    },
-    {
-      id: 9,
-      title: '탐구관',
-      description: '여기는 탐구관입니다.',
-      facilities: ['Research Labs', 'Library'],
-      latitude: 37.583448,
-      longitude: 127.009135,
-    },
-    {
-      id: 10,
-      title: '학군단',
-      description: '여기는 학군단입니다.',
-      facilities: ['Military Training Rooms', 'Locker Rooms'],
-      latitude: 37.583178,
-      longitude: 127.008915,
-    },
-    {
-      id: 11,
-      title: '연구관',
-      description: '여기는 연구관입니다.',
-      facilities: ['Laboratories', 'Conference Rooms'],
-      latitude: 37.582288,
-      longitude: 127.009785,
-    },
-    {
-      id: 12,
-      title: '지선관',
-      description: '여기는 지선관입니다.',
-      facilities: ['Classrooms', 'Computer Labs'],
-      latitude: 37.581998,
-      longitude: 127.009785,
-    },
-    {
-      id: 13,
-      title: '공학관A',
-      description: '여기는 공학관 A입니다.',
-      facilities: ['Engineering Labs', 'Wi-Fi'],
-      latitude: 37.581798,
-      longitude: 127.009865,
-    },
-    {
-      id: 14,
-      title: '공학관B',
-      description: '여기는 공학관 B입니다.',
-      facilities: ['Workshops', '3D Printing'],
-      latitude: 37.581498,
-      longitude: 127.009585,
-    },
-    {
-      id: 15,
-      title: '상빌',
-      description: '여기는 상상빌리지입니다.',
-      facilities: ['Dormitories', 'Cafeteria'],
-      latitude: 37.581498,
-      longitude: 127.010005,
-    },
-    {
-      id: 16,
-      title: '인성관',
-      description: '여기는 인성관입니다.',
-      facilities: ['Lecture Halls', 'Meeting Rooms'],
-      latitude: 37.581938,
-      longitude: 127.010805,
-    },
-    {
-      id: 17,
-      title: '학송관',
-      description: '여기는 학송관입니다.',
-      facilities: ['Music Rooms', 'Auditorium'],
-      latitude: 37.583298,
-      longitude: 127.009575,
-    },
-  ];
-  
-
-  // 검색 기능: 장소, 설명, 또는 시설물 기준으로 검색
-  const handleSearch = () => {
-    const trimmedSearch = search.trim(); // 공백 제거
-
-    // 시설물 검색
-    const facilityMatch = locations.find((loc) =>
-      loc.facilities.some((facility) =>
-        facility.toLowerCase().includes(trimmedSearch.toLowerCase())
-      )
-    );
-
-    // 장소 검색
-    const locationMatch = locations.find(
-      (loc) =>
-        loc.title.includes(trimmedSearch) ||
-        loc.description.includes(trimmedSearch)
-    );
-
-    if (facilityMatch) {
-      // 시설물 검색 결과
-      setRegion({
-        ...region,
-        latitude: facilityMatch.latitude,
-        longitude: facilityMatch.longitude,
-      });
-      setSelectedMarker({
-        ...facilityMatch,
-        title: `시설물: ${trimmedSearch}`,
-        description: `시설물이 위치한 장소: ${facilityMatch.title}`,
-      });
-    } else if (locationMatch) {
-      // 장소 검색 결과
-      setRegion({
-        ...region,
-        latitude: locationMatch.latitude,
-        longitude: locationMatch.longitude,
-      });
-      setSelectedMarker(locationMatch); // 검색된 마커 선택
-    } else {
-      alert('검색 결과가 없습니다.');
+  // Firestore에서 데이터 가져오기
+  const fetchLocations = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, 'locations')); // 'locations'는 Firestore 컬렉션 이름
+      const fetchedLocations = querySnapshot.docs.map((doc) => ({
+        id: doc.id, // Firestore 문서 ID
+        ...doc.data(), // 문서 데이터
+      }));
+      setLocations(fetchedLocations); // 상태 업데이트
+    } catch (error) {
+      console.error('Firestore에서 데이터를 가져오는 중 오류 발생:', error);
     }
-
-    if (trimmedSearch) {
-      // 최근 검색어 업데이트
-      setRecentSearches((prev) =>
-        [...new Set([trimmedSearch, ...prev])].slice(0, 5)
-      );
-    }
-    setShowRecentSearches(false); // 검색 후 최근 검색어 창 닫기
   };
+
+  useEffect(() => {
+    fetchLocations(); // 컴포넌트가 처음 렌더링될 때 실행
+  }, []);
+
+// 검색 기능
+const handleSearch = () => {
+  const trimmedSearch = search.trim(); // 공백 제거
+
+  // 시설물 검색
+  const facilitiesMatch = locations.filter((loc) =>
+    loc.facilities.some((facility) =>
+      facility.toLowerCase().includes(trimmedSearch.toLowerCase())
+    )
+  );
+
+  // 장소 검색
+  const locationMatch = locations.find(
+    (loc) =>
+      loc.title.includes(trimmedSearch) ||
+      loc.description.includes(trimmedSearch)
+  );
+
+  if (facilitiesMatch.length > 0) {
+    // 시설물 검색 결과
+    const combinedDescription = facilitiesMatch
+      .map((loc) => loc.title)
+      .join(', ');
+
+    setRegion({
+      ...region,
+      latitude: facilitiesMatch[0].latitude,
+      longitude: facilitiesMatch[0].longitude,
+    });
+    setSelectedMarker({
+      title: `시설물: ${trimmedSearch}`,
+      description: `시설물이 위치한 장소: ${combinedDescription}`,
+      facilities: facilitiesMatch.map((loc) => loc.facilities).flat(),
+    });
+  } else if (locationMatch) {
+    // 장소 검색 결과
+    setRegion({
+      ...region,
+      latitude: locationMatch.latitude,
+      longitude: locationMatch.longitude,
+    });
+    setSelectedMarker(locationMatch);
+  } else {
+    alert('검색 결과가 없습니다.');
+  }
+
+  if (trimmedSearch) {
+    setRecentSearches((prev) =>
+      [...new Set([trimmedSearch, ...prev])].slice(0, 5)
+    );
+  }
+  setShowRecentSearches(false); // 검색 후 최근 검색어 창 닫기
+};
+
 
   const clearSelection = () => {
     setSelectedMarker(null);
@@ -297,10 +176,15 @@ export default function MapScreen({ navigation }) {
               시설물: {selectedMarker.facilities.join(', ')}
             </Text>
           )}
-
-          {/* 버튼 추가 */}
+          {/* 리뷰 버튼 */}
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={styles.button}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                console.log('Navigating with facility:', selectedMarker);
+                navigation.navigate('ReviewScreen', { facility: selectedMarker });
+              }}
+            >
               <Text style={styles.buttonText}>리뷰</Text>
             </TouchableOpacity>
           </View>
@@ -400,7 +284,7 @@ const styles = StyleSheet.create({
   },
   recentSearchContainer: {
     position: 'absolute',
-    top: 60, // 검색창 바로 아래
+    top: 60,
     left: 10,
     right: 10,
     zIndex: 1,

@@ -12,6 +12,8 @@ import LastRegisterScreen from './screens/LastRegisterScreen';
 import PostDetailScreen from './screens/PostDetailScreen';
 import AddPostScreen from './screens/AddPostScreen';
 import BottomTabNavigator from './navigation/BottomTabNavigator'; // 하단 네비게이션 연결
+import ReviewScreen from './screens/ReviewScreen'; 
+import WriteReviewScreen from './screens/WriteReviewScreen';
 
 const Stack = createStackNavigator();
 
@@ -31,6 +33,18 @@ export default function App() {
           {/* 게시물 관련 화면 */}
           <Stack.Screen name="PostDetailScreen" component={PostDetailScreen} />
           <Stack.Screen name="AddPostScreen" component={AddPostScreen} />
+
+          {/* 리뷰 화면 */}
+          <Stack.Screen
+            name="ReviewScreen"
+            component={ReviewScreen}
+            options={{ title: '리뷰 작성' }} // 헤더 제목
+          />
+          <Stack.Screen
+          name="WriteReviewScreen"
+          component={WriteReviewScreen}
+          options={{ title: '리뷰 작성' }}
+          />
 
           {/* 하단 네비게이션 포함된 화면 */}
           <Stack.Screen
