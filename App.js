@@ -38,7 +38,7 @@ export default function App() {
           <Stack.Screen
             name="ReviewScreen"
             component={ReviewScreen}
-            options={{ title: '리뷰 작성' }} // 헤더 제목
+            options={{ title: '리뷰' }} // 헤더 제목
           />
           <Stack.Screen
           name="WriteReviewScreen"

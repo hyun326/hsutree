@@ -7,8 +7,8 @@ import { db } from '../firebaseConfig';
 export default function MapScreen({ navigation }) {
   const [locations, setLocations] = useState([]); // Firestore에서 가져온 데이터를 저장
   const [region, setRegion] = useState({
-    latitude: 37.582131, // 초기 지도 중심
-    longitude: 127.010305,
+    latitude: 37.582300, // 초기 지도 중심
+    longitude: 127.010180,
     latitudeDelta: 0.0041,
     longitudeDelta: 0.0040,
   });
