@@ -1,99 +1,144 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity,Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { collection, getDocs } from 'firebase/firestore'; // Firestore 읽기 관련 함수
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
-export default function MapScreen({ navigation }) {
-  const [locations, setLocations] = useState([]); // Firestore에서 가져온 데이터를 저장
+export default function MapScreen({ navigation, route }) {
+  const [locations, setLocations] = useState([]);
   const [region, setRegion] = useState({
-    latitude: 37.582300, // 초기 지도 중심
+    latitude: 37.582300,
     longitude: 127.010180,
     latitudeDelta: 0.0041,
     longitudeDelta: 0.0040,
   });
-
   const [search, setSearch] = useState('');
-  const [selectedMarker, setSelectedMarker] = useState(null); // 선택된 마커 정보 저장
-  const [recentSearches, setRecentSearches] = useState([]); // 최근 검색어 저장
-  const [showRecentSearches, setShowRecentSearches] = useState(false); // 최근 검색어 창 표시 여부
+  const [selectedMarker, setSelectedMarker] = useState(null);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [showRecentSearches, setShowRecentSearches] = useState(false);
 
   // Firestore에서 데이터 가져오기
   const fetchLocations = async () => {
     try {
-      const querySnapshot = await getDocs(collection(db, 'locations')); // 'locations'는 Firestore 컬렉션 이름
+      const querySnapshot = await getDocs(collection(db, 'locations'));
       const fetchedLocations = querySnapshot.docs.map((doc) => ({
-        id: doc.id, // Firestore 문서 ID
-        ...doc.data(), // 문서 데이터
+        id: doc.id,
+        ...doc.data(),
       }));
-      setLocations(fetchedLocations); // 상태 업데이트
+      setLocations(fetchedLocations);
     } catch (error) {
       console.error('Firestore에서 데이터를 가져오는 중 오류 발생:', error);
     }
   };
 
-  useEffect(() => {
-    fetchLocations(); // 컴포넌트가 처음 렌더링될 때 실행
-  }, []);
+// 특정 강의실의 위치를 찾아 지도 중심으로 설정
+const focusMapOnRoom = (room) => {
+  if (!room) return;
 
-// 검색 기능
-const handleSearch = () => {
-  const trimmedSearch = search.trim(); // 공백 제거
-
-  // 시설물 검색
-  const facilitiesMatch = locations.filter((loc) =>
-    loc.facilities.some((facility) =>
-      facility.toLowerCase().includes(trimmedSearch.toLowerCase())
-    )
+  // 강의실 이름이 `facilities` 배열 또는 `title`에 포함되어 있는지 확인
+  const matchingLocation = locations.find((location) =>
+    location.facilities.some((facility) =>
+      facility.toLowerCase().includes(room.toLowerCase().trim())
+    ) ||
+    location.title.toLowerCase().includes(room.toLowerCase().trim()) // title과 비교 추가
   );
 
-  // 장소 검색
-  const locationMatch = locations.find(
-    (loc) =>
-      loc.title.includes(trimmedSearch) ||
-      loc.description.includes(trimmedSearch)
-  );
-
-  if (facilitiesMatch.length > 0) {
-    // 시설물 검색 결과
-    const combinedDescription = facilitiesMatch
-      .map((loc) => loc.title)
-      .join(', ');
-
+  if (matchingLocation) {
+    // 지도 중심 설정
     setRegion({
-      ...region,
-      latitude: facilitiesMatch[0].latitude,
-      longitude: facilitiesMatch[0].longitude,
+      latitude: matchingLocation.latitude,
+      longitude: matchingLocation.longitude,
+      latitudeDelta: 0.0041,
+      longitudeDelta: 0.0040,
     });
-    setSelectedMarker({
-      title: `시설물: ${trimmedSearch}`,
-      description: `시설물이 위치한 장소: ${combinedDescription}`,
-      facilities: facilitiesMatch.map((loc) => loc.facilities).flat(),
-    });
-  } else if (locationMatch) {
-    // 장소 검색 결과
-    setRegion({
-      ...region,
-      latitude: locationMatch.latitude,
-      longitude: locationMatch.longitude,
-    });
-    setSelectedMarker(locationMatch);
+
+    // 선택된 마커 설정
+    setSelectedMarker(matchingLocation);
   } else {
-    alert('검색 결과가 없습니다.');
+    Alert.alert('오류', `해당 강의실(${room})의 위치를 찾을 수 없습니다.`);
   }
-
-  if (trimmedSearch) {
-    setRecentSearches((prev) =>
-      [...new Set([trimmedSearch, ...prev])].slice(0, 5)
-    );
-  }
-  setShowRecentSearches(false); // 검색 후 최근 검색어 창 닫기
 };
 
 
+// MapView가 지도 중심을 자동으로 업데이트하도록 useEffect 추가
+useEffect(() => {
+  if (selectedMarker) {
+    setRegion((prevRegion) => ({
+      ...prevRegion,
+      latitude: selectedMarker.latitude,
+      longitude: selectedMarker.longitude,
+    }));
+  }
+}, [selectedMarker]);
+
+
+// route.params에서 room 값을 가져와 지도 중심 설정
+useEffect(() => {
+  if (route?.params?.room) {
+    focusMapOnRoom(route.params.room);
+  }
+}, [route.params, locations]);
+
+
+  // route.params에서 room 값을 가져와 지도 중심 설정
+  useEffect(() => {
+    if (route?.params?.room) {
+      const room = route.params.room;
+      focusMapOnRoom(room);
+    }
+  }, [route.params, locations]);
+
+  // 검색 기능
+  const handleSearch = () => {
+    const trimmedSearch = search.trim();
+
+    const facilitiesMatch = locations.filter((loc) =>
+      loc.facilities.some((facility) =>
+        facility.toLowerCase().includes(trimmedSearch.toLowerCase())
+      )
+    );
+
+    const locationMatch = locations.find(
+      (loc) =>
+        loc.title.includes(trimmedSearch) ||
+        loc.description.includes(trimmedSearch)
+    );
+
+    if (facilitiesMatch.length > 0) {
+      const combinedDescription = facilitiesMatch.map((loc) => loc.title).join(', ');
+
+      setRegion({
+        ...region,
+        latitude: facilitiesMatch[0].latitude,
+        longitude: facilitiesMatch[0].longitude,
+      });
+      setSelectedMarker({
+        title: `시설물: ${trimmedSearch}`,
+        description: `시설물이 위치한 장소: ${combinedDescription}`,
+        facilities: facilitiesMatch.map((loc) => loc.facilities).flat(),
+      });
+    } else if (locationMatch) {
+      setRegion({
+        ...region,
+        latitude: locationMatch.latitude,
+        longitude: locationMatch.longitude,
+      });
+      setSelectedMarker(locationMatch);
+    } else {
+      alert('검색 결과가 없습니다.');
+    }
+
+    if (trimmedSearch) {
+      setRecentSearches((prev) =>
+        [...new Set([trimmedSearch, ...prev])].slice(0, 5)
+      );
+    }
+    setShowRecentSearches(false);
+  };
+
   const clearSelection = () => {
     setSelectedMarker(null);
-    setShowRecentSearches(false); // 맵을 누르면 최근 검색어 창 닫기
+    setShowRecentSearches(false);
   };
 
   return (
@@ -105,8 +150,8 @@ const handleSearch = () => {
           placeholder="장소, 설명 또는 시설물 검색..."
           value={search}
           onChangeText={setSearch}
-          onFocus={() => setShowRecentSearches(true)} // 검색창 클릭 시 최근 검색어 표시
-          onSubmitEditing={handleSearch} // 검색 버튼 누를 시 실행
+          onFocus={() => setShowRecentSearches(true)}
+          onSubmitEditing={handleSearch}
         />
       </View>
 
@@ -116,7 +161,7 @@ const handleSearch = () => {
         provider={Platform.OS === 'ios' ? null : PROVIDER_GOOGLE}
         region={region}
         onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
-        onPress={clearSelection} // 맵을 누르면 선택 해제
+        onPress={clearSelection}
       >
         {locations.map((location) => (
           <Marker
@@ -125,9 +170,8 @@ const handleSearch = () => {
               latitude: location.latitude,
               longitude: location.longitude,
             }}
-            onPress={() => setSelectedMarker(location)} // 클릭된 마커 설정
+            onPress={() => setSelectedMarker(location)}
           >
-            {/* 마커 커스텀 뷰 */}
             <View style={{ alignItems: 'center', overflow: 'visible' }}>
               <Text
                 style={{
@@ -176,7 +220,6 @@ const handleSearch = () => {
               시설물: {selectedMarker.facilities.join(', ')}
             </Text>
           )}
-          {/* 리뷰 버튼 */}
           <View style={styles.buttonContainer}>
             <TouchableOpacity
               style={styles.button}
@@ -188,25 +231,6 @@ const handleSearch = () => {
               <Text style={styles.buttonText}>리뷰</Text>
             </TouchableOpacity>
           </View>
-        </View>
-      )}
-
-      {/* 최근 검색어 */}
-      {showRecentSearches && (
-        <View style={styles.recentSearchContainer}>
-          <Text style={styles.recentTitle}>최근 검색어</Text>
-          {recentSearches.map((item, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => {
-                setSearch(item);
-                handleSearch();
-                setShowRecentSearches(false); // 최근 검색어 클릭 시 창 닫기
-              }}
-            >
-              <Text style={styles.recentItem}>{item}</Text>
-            </TouchableOpacity>
-          ))}
         </View>
       )}
     </View>

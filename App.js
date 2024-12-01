@@ -12,8 +12,12 @@ import LastRegisterScreen from './screens/LastRegisterScreen';
 import PostDetailScreen from './screens/PostDetailScreen';
 import AddPostScreen from './screens/AddPostScreen';
 import BottomTabNavigator from './navigation/BottomTabNavigator'; // 하단 네비게이션 연결
-import ReviewScreen from './screens/ReviewScreen'; 
+import ReviewScreen from './screens/ReviewScreen';
 import WriteReviewScreen from './screens/WriteReviewScreen';
+
+// MapScreen과 ScheduleScreen 추가
+import MapScreen from './screens/MapScreen';
+import ScheduleScreen from './screens/ScheduleScreen';
 
 const Stack = createStackNavigator();
 
@@ -38,19 +42,31 @@ export default function App() {
           <Stack.Screen
             name="ReviewScreen"
             component={ReviewScreen}
-            options={{ title: '리뷰' }} // 헤더 제목
+            options={{ title: '리뷰' }}
           />
           <Stack.Screen
-          name="WriteReviewScreen"
-          component={WriteReviewScreen}
-          options={{ title: '리뷰 작성' }}
+            name="WriteReviewScreen"
+            component={WriteReviewScreen}
+            options={{ title: '리뷰 작성' }}
           />
 
           {/* 하단 네비게이션 포함된 화면 */}
           <Stack.Screen
             name="MainWithTabs"
             component={BottomTabNavigator}
-            options={{ headerShown: false }} // 헤더 숨김
+            options={{ headerShown: false }}
+          />
+
+          {/* MapScreen과 ScheduleScreen 추가 */}
+          <Stack.Screen
+            name="MapScreen"
+            component={MapScreen}
+            options={{ title: '지도 보기' }}
+          />
+          <Stack.Screen
+            name="ScheduleScreen"
+            component={ScheduleScreen}
+            options={{ title: '시간표 관리' }}
           />
         </Stack.Navigator>
       </NavigationContainer>
