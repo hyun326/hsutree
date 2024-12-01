@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import Dialog from 'react-native-dialog';
 
@@ -10,7 +10,6 @@ export default function PostDetailScreen({ route, navigation }) {
   const commentInputRef = useRef('');
   const [password, setPassword] = useState(''); // 비밀번호 상태
   const [isPasswordDialogVisible, setIsPasswordDialogVisible] = useState(false); // 비밀번호 다이얼로그 상태
-  const [isPasswordCorrect, setIsPasswordCorrect] = useState(false); // 비밀번호 확인 여부
   const [isDeleteConfirmDialogVisible, setIsDeleteConfirmDialogVisible] = useState(false); // 삭제 확인 다이얼로그 상태
 
   useEffect(() => {
@@ -56,15 +55,19 @@ export default function PostDetailScreen({ route, navigation }) {
     }
   }, [post.id]);
 
-  const handlePasswordCheck = () => {
-    // 비밀번호는 숫자 4자리로 간주
-    if (password.length === 4) {
-      setIsPasswordCorrect(true);
-      setIsPasswordDialogVisible(false); // 비밀번호 다이얼로그 닫기
-      setIsDeleteConfirmDialogVisible(true); // 삭제 확인 다이얼로그 띄우기
-    } else {
-      setIsPasswordCorrect(false);
-      Alert.alert('오류', '잘못된 비밀번호입니다.');
+  const handlePasswordCheck = async () => {
+    try {
+      const postRef = doc(db, 'posts', post.id);
+      const postSnapshot = await getDoc(postRef);
+
+      if (postSnapshot.exists() && postSnapshot.data().password === password) {
+        setIsPasswordDialogVisible(false); // 비밀번호 다이얼로그 닫기
+        setIsDeleteConfirmDialogVisible(true); // 삭제 확인 다이얼로그 띄우기
+      } else {
+        Alert.alert('오류', '잘못된 비밀번호입니다.');
+      }
+    } catch (error) {
+      Alert.alert('오류', '비밀번호 확인 중 문제가 발생했습니다.');
     }
   };
 
