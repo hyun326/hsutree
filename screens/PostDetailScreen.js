@@ -11,13 +11,15 @@ export default function PostDetailScreen({ route, navigation }) {
   const [password, setPassword] = useState(''); // 비밀번호 상태
   const [isPasswordDialogVisible, setIsPasswordDialogVisible] = useState(false); // 비밀번호 다이얼로그 상태
   const [isDeleteConfirmDialogVisible, setIsDeleteConfirmDialogVisible] = useState(false); // 삭제 확인 다이얼로그 상태
+  const [isEditConfirmDialogVisible, setIsEditConfirmDialogVisible] = useState(false); // 수정 확인 다이얼로그 상태
+  const [isEditing, setIsEditing] = useState(false); // 수정 모드 상태
 
   useEffect(() => {
     navigation.setOptions({
       headerTitle: '', // 제목을 빈 문자열로 설정
       headerRight: () => (
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePostPress}>
-          <Text style={styles.deleteButtonText}>삭제</Text>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteOrEditPostPress}>
+          <Text style={styles.deleteButtonText}>수정/삭제</Text>
         </TouchableOpacity>
       ),
     });
@@ -55,14 +57,18 @@ export default function PostDetailScreen({ route, navigation }) {
     }
   }, [post.id]);
 
-  const handlePasswordCheck = async () => {
+  const handlePasswordCheck = async (action) => {
     try {
       const postRef = doc(db, 'posts', post.id);
       const postSnapshot = await getDoc(postRef);
 
       if (postSnapshot.exists() && postSnapshot.data().password === password) {
         setIsPasswordDialogVisible(false); // 비밀번호 다이얼로그 닫기
-        setIsDeleteConfirmDialogVisible(true); // 삭제 확인 다이얼로그 띄우기
+        if (action === 'delete') {
+          setIsDeleteConfirmDialogVisible(true); // 삭제 확인 다이얼로그 띄우기
+        } else if (action === 'edit') {
+          setIsEditConfirmDialogVisible(true); // 수정 확인 다이얼로그 띄우기
+        }
       } else {
         Alert.alert('오류', '잘못된 비밀번호입니다.');
       }
@@ -71,7 +77,7 @@ export default function PostDetailScreen({ route, navigation }) {
     }
   };
 
-  const handleDeletePostPress = () => {
+  const handleDeleteOrEditPostPress = () => {
     // 비밀번호 입력을 요구하는 다이얼로그를 띄운다
     setIsPasswordDialogVisible(true);
   };
@@ -85,6 +91,11 @@ export default function PostDetailScreen({ route, navigation }) {
     } catch (error) {
       Alert.alert('오류', '게시글 삭제 중 문제가 발생했습니다.');
     }
+  };
+
+  const handleEditPost = () => {
+    setIsEditConfirmDialogVisible(false);
+    navigation.navigate('AddPostScreen', { post, isEditing: true });
   };
 
   const handleDeleteCancel = () => {
@@ -143,7 +154,8 @@ export default function PostDetailScreen({ route, navigation }) {
           onChangeText={setPassword}
         />
         <Dialog.Button label="취소" onPress={() => setIsPasswordDialogVisible(false)} />
-        <Dialog.Button label="확인" onPress={handlePasswordCheck} />
+        <Dialog.Button label="수정" onPress={() => handlePasswordCheck('edit')} />
+        <Dialog.Button label="삭제" onPress={() => handlePasswordCheck('delete')} />
       </Dialog.Container>
 
       {/* 삭제 확인 다이얼로그 */}
@@ -152,6 +164,14 @@ export default function PostDetailScreen({ route, navigation }) {
         <Dialog.Description>게시글을 삭제하시겠습니까?</Dialog.Description>
         <Dialog.Button label="취소" onPress={handleDeleteCancel} />
         <Dialog.Button label="확인" onPress={handleDeletePost} />
+      </Dialog.Container>
+
+      {/* 수정 확인 다이얼로그 */}
+      <Dialog.Container visible={isEditConfirmDialogVisible}>
+        <Dialog.Title>게시글 수정 확인</Dialog.Title>
+        <Dialog.Description>게시글을 수정하시겠습니까?</Dialog.Description>
+        <Dialog.Button label="취소" onPress={() => setIsEditConfirmDialogVisible(false)} />
+        <Dialog.Button label="확인" onPress={handleEditPost} />
       </Dialog.Container>
     </KeyboardAvoidingView>
   );
