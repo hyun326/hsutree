@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -17,7 +17,7 @@ export default function MapScreen({ navigation, route }) {
   const [recentSearches, setRecentSearches] = useState([]);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
 
-  // Firestore에서 데이터 가져오기
+  // Firestore에서 데이터 검색
   const fetchLocations = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, 'locations'));
@@ -27,64 +27,41 @@ export default function MapScreen({ navigation, route }) {
       }));
       setLocations(fetchedLocations);
     } catch (error) {
-      console.error('Firestore에서 데이터를 가져오는 중 오류 발생:', error);
+      console.error('Firestore에서 데이터를 검색하는 데 오류 발생:', error);
     }
   };
 
-// 특정 강의실의 위치를 찾아 지도 중심으로 설정
-const focusMapOnRoom = (room) => {
-  if (!room) return;
+  useEffect(() => {
+    fetchLocations();
+  }, []);
 
-  // 강의실 이름이 `facilities` 배열 또는 `title`에 포함되어 있는지 확인
-  const matchingLocation = locations.find((location) =>
-    location.facilities.some((facility) =>
-      facility.toLowerCase().includes(room.toLowerCase().trim())
-    ) ||
-    location.title.toLowerCase().includes(room.toLowerCase().trim()) // title과 비교 추가
-  );
+  // 특정 강의실의 위치를 찾아 지도 중심으로 설정
+  const focusMapOnRoom = (room) => {
+    if (!room) return;
 
-  if (matchingLocation) {
-    // 지도 중심 설정
-    setRegion({
-      latitude: matchingLocation.latitude,
-      longitude: matchingLocation.longitude,
-      latitudeDelta: 0.0041,
-      longitudeDelta: 0.0040,
-    });
+    const matchingLocation = locations.find((location) =>
+      location.facilities.some((facility) =>
+        facility.toLowerCase().includes(room.toLowerCase().trim())
+      ) ||
+      location.title.toLowerCase().includes(room.toLowerCase().trim()) 
+    );
 
-    // 선택된 마커 설정
-    setSelectedMarker(matchingLocation);
-  } else {
-    Alert.alert('오류', `해당 강의실(${room})의 위치를 찾을 수 없습니다.`);
-  }
-};
+    if (matchingLocation) {
+      setRegion({
+        latitude: matchingLocation.latitude,
+        longitude: matchingLocation.longitude,
+        latitudeDelta: 0.0041,
+        longitudeDelta: 0.0040,
+      });
+      setSelectedMarker(matchingLocation);
+    } else {
+      Alert.alert('오류', `해당 강의실(${room})의 위치를 찾을 수 없습니다.`);
+    }
+  };
 
-
-// MapView가 지도 중심을 자동으로 업데이트하도록 useEffect 추가
-useEffect(() => {
-  if (selectedMarker) {
-    setRegion((prevRegion) => ({
-      ...prevRegion,
-      latitude: selectedMarker.latitude,
-      longitude: selectedMarker.longitude,
-    }));
-  }
-}, [selectedMarker]);
-
-
-// route.params에서 room 값을 가져와 지도 중심 설정
-useEffect(() => {
-  if (route?.params?.room) {
-    focusMapOnRoom(route.params.room);
-  }
-}, [route.params, locations]);
-
-
-  // route.params에서 room 값을 가져와 지도 중심 설정
   useEffect(() => {
     if (route?.params?.room) {
-      const room = route.params.room;
-      focusMapOnRoom(room);
+      focusMapOnRoom(route.params.room);
     }
   }, [route.params, locations]);
 
@@ -113,7 +90,7 @@ useEffect(() => {
         longitude: facilitiesMatch[0].longitude,
       });
       setSelectedMarker({
-        title: `시설물: ${trimmedSearch}`,
+        title: `${trimmedSearch}`,
         description: `시설물이 위치한 장소: ${combinedDescription}`,
         facilities: facilitiesMatch.map((loc) => loc.facilities).flat(),
       });
@@ -142,98 +119,118 @@ useEffect(() => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* 검색 창 */}
-      <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="장소, 설명 또는 시설물 검색..."
-          value={search}
-          onChangeText={setSearch}
-          onFocus={() => setShowRecentSearches(true)}
-          onSubmitEditing={handleSearch}
-        />
-      </View>
+    <TouchableWithoutFeedback onPress={() => setShowRecentSearches(false)}>
+      <View style={{ flex: 1 }}>
+        {/* 검색 창 */}
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="장소, 설명 또는 시설물 검색..."
+            value={search}
+            onChangeText={setSearch}
+            onFocus={() => setShowRecentSearches(true)}
+            onSubmitEditing={handleSearch}
+          />
+          {showRecentSearches && recentSearches.length > 0 && (
+            <View style={styles.recentSearchContainer}>
+              <Text style={styles.recentTitle}>최근 검색어</Text>
+              {recentSearches.map((item, index) => (
+                <TouchableOpacity key={index} onPress={() => {
+                  setSearch(item);
+                  handleSearch();
+                }}>
+                  <Text style={styles.recentItem}>{item}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
 
-      {/* 지도 */}
-      <MapView
-        style={{ flex: 1 }}
-        provider={Platform.OS === 'ios' ? null : PROVIDER_GOOGLE}
-        region={region}
-        onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
-        onPress={clearSelection}
-      >
-        {locations.map((location) => (
-          <Marker
-            key={location.id}
-            coordinate={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-            }}
-            onPress={() => setSelectedMarker(location)}
-          >
-            <View style={{ alignItems: 'center', overflow: 'visible' }}>
-              <Text
-                style={{
-                  fontSize: 9,
-                  fontWeight: 'bold',
-                  color: 'black',
-                  textAlign: 'center',
-                  flexWrap: 'wrap',
-                }}
-                numberOfLines={0}
-              >
-                {location.title}
-              </Text>
-              <View
-                style={{
-                  width: selectedMarker?.id === location.id ? 20 : 20,
-                  height: selectedMarker?.id === location.id ? 20 : 20,
-                  backgroundColor:
-                    selectedMarker?.id === location.id ? 'blue' : 'red',
-                  borderRadius: 80,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
+        {/* 지도 */}
+        <MapView
+          style={{ flex: 1 }}
+          provider={Platform.OS === 'ios' ? null : PROVIDER_GOOGLE}
+          region={region}
+          onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
+          onPress={clearSelection}
+        >
+          {locations.map((location) => (
+            <Marker
+              key={location.id}
+              coordinate={{
+                latitude: location.latitude,
+                longitude: location.longitude,
+              }}
+              onPress={() => setSelectedMarker(location)}
+            >
+              <View style={{ alignItems: 'center', overflow: 'visible' }}>
+                <Text
+                  style={{
+                    fontSize: 9,
+                    fontWeight: 'bold',
+                    color: 'black',
+                    textAlign: 'center',
+                    flexWrap: 'wrap',
+                  }}
+                  numberOfLines={0}
+                >
+                  {location.title}
+                </Text>
                 <View
                   style={{
-                    width: selectedMarker?.id === location.id ? 5 : 5,
-                    height: selectedMarker?.id === location.id ? 5 : 5,
-                    backgroundColor: 'white',
-                    borderRadius: 10,
+                    width: selectedMarker?.id === location.id ? 20 : 20,
+                    height: selectedMarker?.id === location.id ? 20 : 20,
+                    backgroundColor:
+                      selectedMarker?.id === location.id ? 'blue' : 'red',
+                    borderRadius: 80,
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
-                />
+                >
+                  <View
+                    style={{
+                      width: selectedMarker?.id === location.id ? 5 : 5,
+                      height: selectedMarker?.id === location.id ? 5 : 5,
+                      backgroundColor: 'white',
+                      borderRadius: 10,
+                    }}
+                  />
+                </View>
               </View>
-            </View>
-          </Marker>
-        ))}
-      </MapView>
+            </Marker>
+          ))}
+        </MapView>
 
-      {/* 하단 창 */}
-      {selectedMarker && (
-        <View style={styles.bottomSheet}>
-          <Text style={styles.title}>{selectedMarker.title}</Text>
-          <Text style={styles.description}>{selectedMarker.description}</Text>
-          {selectedMarker.facilities && selectedMarker.facilities.length > 0 && (
-            <Text style={styles.facilities}>
-              시설물: {selectedMarker.facilities.join(', ')}
-            </Text>
-          )}
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={styles.button}
-              onPress={() => {
-                console.log('Navigating with facility:', selectedMarker);
-                navigation.navigate('ReviewScreen', { facility: selectedMarker });
-              }}
-            >
-              <Text style={styles.buttonText}>리뷰</Text>
-            </TouchableOpacity>
+        {/* 하단 창 */}
+        {selectedMarker && (
+          <View style={styles.bottomSheet}>
+            <Text style={styles.title}>{selectedMarker.title}</Text>
+            <Text style={styles.description}>{selectedMarker.description}</Text>
+            {selectedMarker.facilities && selectedMarker.facilities.length > 0 && (
+              <Text style={styles.facilities}>
+                시설물: {selectedMarker.facilities.join(', ')}
+              </Text>
+            )}
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                style={styles.button}
+                onPress={() => {
+                  navigation.navigate('ReviewScreen', {
+                    facility: {
+                      title: selectedMarker.title,
+                      description: selectedMarker.description,
+                      facilities: selectedMarker.facilities,
+                    },
+                  });
+                }}
+              >
+                <Text style={styles.buttonText}>리뷰</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      )}
-    </View>
+        )}
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
 

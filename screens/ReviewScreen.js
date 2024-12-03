@@ -1,8 +1,11 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from 'react-native';
+import { db } from '../firebaseConfig';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function ReviewScreen({ route, navigation }) {
-  const { facility } = route.params || {}; // route.params가 없을 경우 처리
+  const { facility } = route.params || {};
 
   if (!facility) {
     return (
@@ -12,30 +15,34 @@ export default function ReviewScreen({ route, navigation }) {
     );
   }
 
-  console.log('Facility:', facility);
+  const { title, description } = facility;
+  const [reviews, setReviews] = useState([]);
 
-  const reviews = [
-    // 임시 리뷰 데이터
-    {
-      id: 1,
-      user: '유관호',
-      date: '2024년 10월 25일',
-      rating: 5,
-      comment: '커피가 맛있어요~\n특히 트리플라떼가 맛있습니다',
-    },
-    {
-      id: 2,
-      user: '이은호',
-      date: '2024년 10월 24일',
-      rating: 3,
-      comment: '아이스아메리카노\n아아는 그냥 그렇네요...',
-    },
-  ];
+  // Firestore에서 리뷰 가져오기 함수
+  const fetchReviews = async () => {
+    try {
+      const q = query(collection(db, 'reviews'), orderBy('date', 'desc')); // 'date' 필드 기준으로 내림차순 정렬
+      const querySnapshot = await getDocs(q);
+      const fetchedReviews = querySnapshot.docs
+        .map((doc) => ({ id: doc.id, ...doc.data() }))
+        .filter((review) => review.facilityTitle === title);
+      setReviews(fetchedReviews);
+    } catch (error) {
+      console.error('Firestore에서 리뷰를 가져오는 중 오류 발생:', error);
+    }
+  };
+
+  // 화면이 포커스될 때마다 Firestore에서 리뷰를 다시 가져오기
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchReviews();
+    }, [title])
+  );
 
   const renderReview = ({ item }) => (
     <View style={styles.reviewCard}>
       <Text style={styles.reviewUser}>{item.user}</Text>
-      <Text style={styles.reviewDate}>{item.date}</Text>
+      <Text style={styles.reviewDate}>{new Date(item.date.seconds * 1000).toLocaleDateString()}</Text>
       <Text style={styles.reviewRating}>{'⭐'.repeat(item.rating)}</Text>
       <Text style={styles.reviewComment}>{item.comment}</Text>
     </View>
@@ -43,18 +50,13 @@ export default function ReviewScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-<Image
-  source={
-    facility.image
-      ? { uri: facility.image } // 이미지가 존재할 경우 사용
-      : require('../assets/logo.png') // 기본 이미지 사용 (placeholder.png는 프로젝트에 추가해야 함)
-  }
-  style={styles.facilityImage}
-/>
-
+      <Image
+        source={require('../assets/logo.png')}
+        style={styles.facilityImage}
+      />
       <View style={styles.facilityInfo}>
-        <Text style={styles.facilityName}>{facility.name}</Text>
-        <Text style={styles.facilityLocation}>{facility.location}</Text>
+        <Text style={styles.facilityName}>{title}</Text>
+        <Text style={styles.facilityDescription}>{description}</Text>
       </View>
       <TouchableOpacity
         style={styles.writeReviewButton}
@@ -62,7 +64,7 @@ export default function ReviewScreen({ route, navigation }) {
       >
         <Text style={styles.writeReviewText}>리뷰 작성</Text>
       </TouchableOpacity>
-      <Text style={styles.recentReviewTitle}>최근 리뷰</Text>
+
       <FlatList
         data={reviews}
         renderItem={renderReview}
@@ -73,31 +75,16 @@ export default function ReviewScreen({ route, navigation }) {
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-    justifyContent: 'center', // 에러 텍스트를 화면 중앙에 배치
-    alignItems: 'center',
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#ff0000',
-    textAlign: 'center',
-    margin: 20,
   },
   facilityImage: {
     width: '100%',
-    height: 300,
-    resizeMode: 'cover',
-    backgroundColor: '#f0f0f0', // 기본 배경색 설정
-  },
-  
-  emptyImage: {
-    width: '100%',
     height: 200,
-    backgroundColor: '#f0f0f0', // 빈칸 배경색
+    resizeMode: 'cover',
+    backgroundColor: '#f0f0f0',
   },
   facilityInfo: {
     padding: 16,
@@ -109,9 +96,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
   },
-  facilityLocation: {
+  facilityDescription: {
     fontSize: 16,
     color: '#555',
+    marginBottom: 8,
   },
   writeReviewButton: {
     backgroundColor: '#007BFF',
@@ -124,12 +112,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  recentReviewTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginHorizontal: 16,
-    marginTop: 16,
   },
   reviewList: {
     paddingHorizontal: 16,
