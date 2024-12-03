@@ -27,9 +27,21 @@ export default function BottomTabNavigator() {
         tabBarInactiveTintColor: 'gray',
       })}
     >
-      <Tab.Screen name="Map" component={MapScreen} />
-      <Tab.Screen name="PostList" component={PostListScreen} />
-      <Tab.Screen name="Schedule" component={ScheduleScreen} />
+<Tab.Screen
+  name="Map"
+  component={MapScreen}
+  options={{ headerShown: false }} // 상단 타이틀 숨기기
+/>
+<Tab.Screen
+  name="PostList"
+  component={PostListScreen}
+  options={{ headerShown: false }} // 상단 타이틀 숨기기
+/>
+<Tab.Screen
+  name="Schedule"
+  component={ScheduleScreen}
+  options={{ headerShown: false }} // 상단 타이틀 숨기기
+/>
     </Tab.Navigator>
   );
 }

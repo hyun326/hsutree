@@ -15,10 +15,6 @@ import BottomTabNavigator from './navigation/BottomTabNavigator'; // 하단 네�
 import ReviewScreen from './screens/ReviewScreen';
 import WriteReviewScreen from './screens/WriteReviewScreen';
 
-// MapScreen과 ScheduleScreen 추가
-import MapScreen from './screens/MapScreen';
-import ScheduleScreen from './screens/ScheduleScreen';
-
 const Stack = createStackNavigator();
 
 export default function App() {
@@ -55,18 +51,6 @@ export default function App() {
             name="MainWithTabs"
             component={BottomTabNavigator}
             options={{ headerShown: false }}
-          />
-
-          {/* MapScreen과 ScheduleScreen 추가 */}
-          <Stack.Screen
-            name="MapScreen"
-            component={MapScreen}
-            options={{ title: '지도 보기' }}
-          />
-          <Stack.Screen
-            name="ScheduleScreen"
-            component={ScheduleScreen}
-            options={{ title: '시간표 관리' }}
           />
         </Stack.Navigator>
       </NavigationContainer>
