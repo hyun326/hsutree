@@ -15,7 +15,7 @@ export default function MapScreen({ navigation, route }) {
   const [search, setSearch] = useState('');
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [recentSearches, setRecentSearches] = useState([]);
-  const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const [showRecentSearches, setShowRecentSearches] = useState(true);
 
   // Firestore에서 데이터 검색
   const fetchLocations = async () => {
@@ -110,7 +110,7 @@ export default function MapScreen({ navigation, route }) {
         [...new Set([trimmedSearch, ...prev])].slice(0, 5)
       );
     }
-    setShowRecentSearches(false);
+    setShowRecentSearches(true);
   };
 
   const clearSelection = () => {
@@ -237,7 +237,7 @@ export default function MapScreen({ navigation, route }) {
 const styles = StyleSheet.create({
   searchContainer: {
     position: 'absolute',
-    top: 10,
+    top: 70,
     left: 10,
     right: 10,
     zIndex: 1,
