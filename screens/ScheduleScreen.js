@@ -1,15 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import Dialog from 'react-native-dialog'; // react-native-dialog를 import합니다.
+import Dialog from 'react-native-dialog';
 
 const ScheduleScreen = ({ navigation }) => {
-  const rows = 14; // 1교시부터 14교시
-  const cols = 5; // 월요일부터 금요일
-  const days = ['월', '화', '수', '목', '금'];
-
-  useEffect(() => {
-    navigation.setOptions({ headerShown: false });
-  }, [navigation]);
+  const rows = 14; // 시간표의 행 수
+  const cols = 5; // 시간표의 열 수 (요일 수)
+  const days = ['월', '화', '수', '목', '금']; // 요일 표시
 
   const timeTable = [
     '09:00 ~ 09:50',
@@ -29,61 +25,43 @@ const ScheduleScreen = ({ navigation }) => {
   ];
 
   const [grid, setGrid] = useState(
-    Array.from({ length: rows }, () => Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF' }))
+    Array.from({ length: rows }, () => Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF', rowspan: 1 }))
   );
 
-  const [dialogVisible, setDialogVisible] = useState(false); // 다이얼로그 상태
-  const [selectedCell, setSelectedCell] = useState(null); // 선택된 셀을 저장
+  const [dialogVisible, setDialogVisible] = useState(false); // 강의 입력 다이얼로그 상태
+  const [selectedCell, setSelectedCell] = useState(null); // 선택된 셀 정보
   const [lecture, setLecture] = useState(''); // 강의명 상태
   const [room, setRoom] = useState(''); // 강의실 상태
+  const [optionDialogVisible, setOptionDialogVisible] = useState(false); // 옵션 다이얼로그 상태
+  const [lectureRoomColorMap, setLectureRoomColorMap] = useState({}); // 강의와 강의실의 색상 매핑
 
-  // 강의명-강의실 조합에 따른 색상 저장용
-  const [lectureRoomColorMap, setLectureRoomColorMap] = useState({});
-
-  // 파스텔 톤 색상을 생성하는 함수
+  // 파스텔 색상 생성 함수
   const generatePastelColor = () => {
-    const randomValue = () => Math.floor(200 + Math.random() * 55); // RGB 값 200~255 (밝은 색상)
+    const randomValue = () => Math.floor(200 + Math.random() * 55);
     return `rgb(${randomValue()}, ${randomValue()}, ${randomValue()})`;
   };
 
+  // 셀을 클릭했을 때 처리하는 함수
   const handleCellPress = (rowIndex, colIndex) => {
     const currentCell = grid[rowIndex][colIndex];
     setSelectedCell({ rowIndex, colIndex });
 
     if (currentCell.lecture || currentCell.room) {
-      // 강의명과 강의실이 이미 입력된 경우 삭제 확인
-      Alert.alert(
-        '삭제 확인',
-        '해당 강의를 삭제하시겠습니까?',
-        [
-          {
-            text: '취소',
-            style: 'cancel',
-          },
-          {
-            text: '확인',
-            onPress: () => {
-              const newGrid = [...grid];
-              newGrid[rowIndex][colIndex] = { lecture: '', room: '', color: '#FFFFFF' };
-              setGrid(newGrid);
-            },
-          },
-        ],
-        { cancelable: true }
-      );
+      setOptionDialogVisible(true); // 값이 있는 경우 옵션 다이얼로그 표시
     } else {
-      // 강의명과 강의실이 비어있는 경우 새로 입력 받음
-      setDialogVisible(true); // 다이얼로그 보이기
+      setLecture(''); // 강의명 초기화
+      setRoom(''); // 강의실 초기화
+      setDialogVisible(true); // 강의 입력 다이얼로그 표시
     }
   };
 
+  // 강의를 저장하는 함수
   const handleSave = (lecture, room) => {
     if (lecture && room && selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
       const lectureRoomKey = `${lecture}-${room}`;
       const existingColor = lectureRoomColorMap[lectureRoomKey];
 
-      // 강의명-강의실 조합이 없으면 새로 색상 생성
       const pastelColor = existingColor || generatePastelColor();
       if (!existingColor) {
         setLectureRoomColorMap((prevMap) => ({
@@ -93,67 +71,113 @@ const ScheduleScreen = ({ navigation }) => {
       }
 
       const newGrid = [...grid];
-      newGrid[rowIndex][colIndex] = { lecture, room, color: pastelColor };
+      let rowspan = 1;
+
+      // 같은 열에서 연속된 강의 확인
+      for (let i = rowIndex + 1; i < rows; i++) {
+        if (
+          newGrid[i][colIndex].lecture === '' &&
+          newGrid[i][colIndex].room === ''
+        ) {
+          rowspan++;
+        } else {
+          break;
+        }
+      }
+
+      // 선택된 열에 대해서만 셀 병합
+      newGrid[rowIndex][colIndex] = { lecture, room, color: pastelColor, rowspan };
+      for (let i = rowIndex + 1; i < rowIndex + rowspan; i++) {
+        newGrid[i][colIndex] = { lecture: '', room: '', color: '#FFFFFF', rowspan: 0 }; // 병합된 셀 표시
+      }
+
       setGrid(newGrid);
-      setDialogVisible(false); // 다이얼로그 닫기
+      setDialogVisible(false);
     }
   };
 
-  // 시간표 초기화
-  const resetSchedule = () => {
-    const resetGrid = Array.from({ length: rows }, () =>
-      Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF' })
-    );
-    setGrid(resetGrid); // 시간표 초기화
-    setLectureRoomColorMap({}); // 색상 매핑 초기화
-    Alert.alert('알림', '시간표가 초기화되었습니다!');
+  // 강의를 삭제하는 함수
+  const handleDelete = () => {
+    if (selectedCell) {
+      const { rowIndex, colIndex } = selectedCell;
+      const newGrid = [...grid];
+      const rowspan = newGrid[rowIndex][colIndex].rowspan;
+
+      for (let i = rowIndex; i < rowIndex + rowspan; i++) {
+        newGrid[i][colIndex] = { lecture: '', room: '', color: '#FFFFFF', rowspan: 1 }; // 셀 초기화
+      }
+
+      setGrid(newGrid);
+      setOptionDialogVisible(false);
+    }
   };
 
-  // 시간표 초기화 확인 알림
-  const handleReset = () => {
-    Alert.alert(
-      '시간표 초기화',
-      '시간표를 초기화하시겠습니까?',
-      [
-        {
-          text: '취소',
-          style: 'cancel', // 취소 버튼 클릭 시 아무 일도 일어나지 않음
-        },
-        {
-          text: '확인',
-          onPress: resetSchedule, // 확인 버튼 클릭 시 초기화 실행
-        },
-      ],
-      { cancelable: true }
-    );
+  // 강의실 위치를 지도에서 확인하는 함수
+  const handleMapNavigation = () => {
+    if (selectedCell) {
+      const { rowIndex, colIndex } = selectedCell;
+      const currentCell = grid[rowIndex][colIndex];
+      if (currentCell.room) {
+        navigation.navigate('Map', { room: currentCell.room }); // 강의실 정보가 있는 경우 지도 화면으로 이동
+      } else {
+        Alert.alert('오류', '강의실 정보가 없습니다.');
+      }
+      setOptionDialogVisible(false);
+    }
+  };
+
+  // 강의를 수정하는 함수
+  const handleEdit = () => {
+    if (selectedCell) {
+      const { rowIndex, colIndex } = selectedCell;
+      const currentCell = grid[rowIndex][colIndex];
+      setLecture(currentCell.lecture);
+      setRoom(currentCell.room);
+      setDialogVisible(true);
+      setOptionDialogVisible(false);
+    }
+  };
+
+  // 시간표를 초기화하는 함수
+  const handleResetSchedule = () => {
+    setGrid(Array.from({ length: rows }, () => Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF', rowspan: 1 })));
+    setLectureRoomColorMap({});
+    Alert.alert('성공', '시간표가 초기화되었습니다.');
   };
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={[styles.headerContainer, { paddingTop: 30 }]}>
         <Text style={styles.title}>시간표 관리</Text>
-        {/* 시간표 초기화 버튼 */}
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleReset} // 버튼 클릭 시 초기화 확인 창 표시
-        >
-          <Text style={styles.buttonText}>시간표 초기화</Text>
+        <TouchableOpacity style={styles.resetButton} onPress={handleResetSchedule}>
+          <Text style={styles.resetButtonText}>초기화</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Dialog for lecture and room input */}
+      {/* 강의 추가/수정 다이얼로그 */}
       <Dialog.Container visible={dialogVisible}>
         <Dialog.Title>강의 입력</Dialog.Title>
         <Dialog.Input
           placeholder="강의명을 입력하세요"
+          value={lecture}
           onChangeText={(text) => setLecture(text)}
         />
         <Dialog.Input
           placeholder="강의실을 입력하세요"
+          value={room}
           onChangeText={(text) => setRoom(text)}
         />
         <Dialog.Button label="취소" onPress={() => setDialogVisible(false)} />
         <Dialog.Button label="확인" onPress={() => handleSave(lecture, room)} />
+      </Dialog.Container>
+
+      {/* 옵션 다이얼로그 */}
+      <Dialog.Container visible={optionDialogVisible}>
+        <Dialog.Title>옵션 선택</Dialog.Title>
+        <Dialog.Button label="삭제" onPress={handleDelete} />
+        <Dialog.Button label="수정" onPress={handleEdit} />
+        <Dialog.Button label="강의실 위치 보기" onPress={handleMapNavigation} />
+        <Dialog.Button label="취소" onPress={() => setOptionDialogVisible(false)} />
       </Dialog.Container>
 
       <View style={styles.table}>
@@ -172,14 +196,16 @@ const ScheduleScreen = ({ navigation }) => {
               <Text style={styles.timePeriod}>{timeTable[rowIndex]}</Text>
             </View>
             {row.map((cell, colIndex) => (
-              <TouchableOpacity
-                key={colIndex}
-                style={[styles.cell, { backgroundColor: cell.color }]}
-                onPress={() => handleCellPress(rowIndex, colIndex)}
-              >
-                <Text style={styles.cellText}>{cell.lecture}</Text>
-                <Text style={styles.cellRoom}>{cell.room}</Text>
-              </TouchableOpacity>
+              cell.rowspan > 0 && (
+                <TouchableOpacity
+                  key={colIndex}
+                  style={[styles.cell, { backgroundColor: cell.color, height: 50 * cell.rowspan }]} // 병합된 셀의 높이를 설정
+                  onPress={() => handleCellPress(rowIndex, colIndex)}
+                >
+                  <Text style={styles.cellText}>{cell.lecture}</Text>
+                  <Text style={styles.cellRoom}>{cell.room}</Text>
+                </TouchableOpacity>
+              )
             ))}
           </View>
         ))}
@@ -205,13 +231,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  button: {
+  resetButton: {
     backgroundColor: '#FF6666',
     paddingVertical: 5,
     paddingHorizontal: 15,
     borderRadius: 5,
   },
-  buttonText: {
+  resetButtonText: {
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',
