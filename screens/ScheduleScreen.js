@@ -3,9 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView } from 'rea
 import Dialog from 'react-native-dialog';
 
 const ScheduleScreen = ({ navigation }) => {
-  const rows = 14; // 시간표의 행 수
-  const cols = 5; // 시간표의 열 수 (요일 수)
-  const days = ['월', '화', '수', '목', '금']; // 요일 표시
+  const rows = 14;
+  const cols = 5;
+  const days = ['월', '화', '수', '목', '금'];
 
   const timeTable = [
     '09:00 ~ 09:50',
@@ -25,37 +25,34 @@ const ScheduleScreen = ({ navigation }) => {
   ];
 
   const [grid, setGrid] = useState(
-    Array.from({ length: rows }, () => Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF', rowspan: 1 }))
+    Array.from({ length: rows }, () => Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF' }))
   );
 
-  const [dialogVisible, setDialogVisible] = useState(false); // 강의 입력 다이얼로그 상태
-  const [selectedCell, setSelectedCell] = useState(null); // 선택된 셀 정보
-  const [lecture, setLecture] = useState(''); // 강의명 상태
-  const [room, setRoom] = useState(''); // 강의실 상태
-  const [optionDialogVisible, setOptionDialogVisible] = useState(false); // 옵션 다이얼로그 상태
-  const [lectureRoomColorMap, setLectureRoomColorMap] = useState({}); // 강의와 강의실의 색상 매핑
+  const [dialogVisible, setDialogVisible] = useState(false);
+  const [selectedCell, setSelectedCell] = useState(null);
+  const [lecture, setLecture] = useState('');
+  const [room, setRoom] = useState('');
+  const [optionDialogVisible, setOptionDialogVisible] = useState(false);
+  const [lectureRoomColorMap, setLectureRoomColorMap] = useState({});
 
-  // 파스텔 색상 생성 함수
   const generatePastelColor = () => {
     const randomValue = () => Math.floor(200 + Math.random() * 55);
     return `rgb(${randomValue()}, ${randomValue()}, ${randomValue()})`;
   };
 
-  // 셀을 클릭했을 때 처리하는 함수
   const handleCellPress = (rowIndex, colIndex) => {
     const currentCell = grid[rowIndex][colIndex];
     setSelectedCell({ rowIndex, colIndex });
 
     if (currentCell.lecture || currentCell.room) {
-      setOptionDialogVisible(true); // 값이 있는 경우 옵션 다이얼로그 표시
+      setOptionDialogVisible(true);
     } else {
-      setLecture(''); // 강의명 초기화
-      setRoom(''); // 강의실 초기화
-      setDialogVisible(true); // 강의 입력 다이얼로그 표시
+      setLecture('');
+      setRoom('');
+      setDialogVisible(true);
     }
   };
 
-  // 강의를 저장하는 함수
   const handleSave = (lecture, room) => {
     if (lecture && room && selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
@@ -71,54 +68,28 @@ const ScheduleScreen = ({ navigation }) => {
       }
 
       const newGrid = [...grid];
-      let rowspan = 1;
-
-      // 같은 열에서 연속된 강의 확인
-      for (let i = rowIndex + 1; i < rows; i++) {
-        if (
-          newGrid[i][colIndex].lecture === '' &&
-          newGrid[i][colIndex].room === ''
-        ) {
-          rowspan++;
-        } else {
-          break;
-        }
-      }
-
-      // 선택된 열에 대해서만 셀 병합
-      newGrid[rowIndex][colIndex] = { lecture, room, color: pastelColor, rowspan };
-      for (let i = rowIndex + 1; i < rowIndex + rowspan; i++) {
-        newGrid[i][colIndex] = { lecture: '', room: '', color: '#FFFFFF', rowspan: 0 }; // 병합된 셀 표시
-      }
-
+      newGrid[rowIndex][colIndex] = { lecture, room, color: pastelColor };
       setGrid(newGrid);
       setDialogVisible(false);
     }
   };
 
-  // 강의를 삭제하는 함수
   const handleDelete = () => {
     if (selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
       const newGrid = [...grid];
-      const rowspan = newGrid[rowIndex][colIndex].rowspan;
-
-      for (let i = rowIndex; i < rowIndex + rowspan; i++) {
-        newGrid[i][colIndex] = { lecture: '', room: '', color: '#FFFFFF', rowspan: 1 }; // 셀 초기화
-      }
-
+      newGrid[rowIndex][colIndex] = { lecture: '', room: '', color: '#FFFFFF' };
       setGrid(newGrid);
       setOptionDialogVisible(false);
     }
   };
 
-  // 강의실 위치를 지도에서 확인하는 함수
   const handleMapNavigation = () => {
     if (selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
       const currentCell = grid[rowIndex][colIndex];
       if (currentCell.room) {
-        navigation.navigate('Map', { room: currentCell.room }); // 강의실 정보가 있는 경우 지도 화면으로 이동
+        navigation.navigate('Map', { room: currentCell.room });
       } else {
         Alert.alert('오류', '강의실 정보가 없습니다.');
       }
@@ -126,7 +97,6 @@ const ScheduleScreen = ({ navigation }) => {
     }
   };
 
-  // 강의를 수정하는 함수
   const handleEdit = () => {
     if (selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
@@ -138,9 +108,8 @@ const ScheduleScreen = ({ navigation }) => {
     }
   };
 
-  // 시간표를 초기화하는 함수
   const handleResetSchedule = () => {
-    setGrid(Array.from({ length: rows }, () => Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF', rowspan: 1 })));
+    setGrid(Array.from({ length: rows }, () => Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF' })));
     setLectureRoomColorMap({});
     Alert.alert('성공', '시간표가 초기화되었습니다.');
   };
@@ -196,16 +165,14 @@ const ScheduleScreen = ({ navigation }) => {
               <Text style={styles.timePeriod}>{timeTable[rowIndex]}</Text>
             </View>
             {row.map((cell, colIndex) => (
-              cell.rowspan > 0 && (
-                <TouchableOpacity
-                  key={colIndex}
-                  style={[styles.cell, { backgroundColor: cell.color, height: 50 * cell.rowspan }]} // 병합된 셀의 높이를 설정
-                  onPress={() => handleCellPress(rowIndex, colIndex)}
-                >
-                  <Text style={styles.cellText}>{cell.lecture}</Text>
-                  <Text style={styles.cellRoom}>{cell.room}</Text>
-                </TouchableOpacity>
-              )
+              <TouchableOpacity
+                key={colIndex}
+                style={[styles.cell, { backgroundColor: cell.color }]}
+                onPress={() => handleCellPress(rowIndex, colIndex)}
+              >
+                <Text style={styles.cellText}>{cell.lecture}</Text>
+                <Text style={styles.cellRoom}>{cell.room}</Text>
+              </TouchableOpacity>
             ))}
           </View>
         ))}
