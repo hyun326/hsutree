@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { useIsFocused } from '@react-navigation/native'; // useIsFocused import 추가
 import { db } from '../firebaseConfig';
 
 export default function PostListScreen({ navigation }) {
   const [posts, setPosts] = useState([]);
+  const isFocused = useIsFocused(); // 현재 화면이 focus 되었는지 확인하는 훅
 
   useEffect(() => {
     navigation.setOptions({
@@ -12,21 +14,21 @@ export default function PostListScreen({ navigation }) {
     });
   }, [navigation]);
 
-
-
   useEffect(() => {
     // Firestore에서 게시글 목록 가져오기
-    const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedPosts = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setPosts(fetchedPosts);
-    });
+    if (isFocused) { // 화면이 focus 될 때마다 데이터를 다시 가져옴
+      const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedPosts = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setPosts(fetchedPosts);
+      });
 
-    return () => unsubscribe();
-  }, []);
+      return () => unsubscribe();
+    }
+  }, [isFocused]); // isFocused가 변경될 때마다 effect 실행
 
   return (
     <View style={styles.container}>
@@ -57,6 +59,7 @@ export default function PostListScreen({ navigation }) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
