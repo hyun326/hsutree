@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 
-export default function AddPostScreen({ navigation }) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [author, setAuthor] = useState('익명');
-  const [password, setPassword] = useState(''); // 비밀번호 상태 추가
+export default function AddPostScreen({ route, navigation }) {
+  const { post, isEditing } = route.params || {};
+  const [title, setTitle] = useState(post ? post.title : ''); // 수정 모드일 경우 초기값 설정
+  const [content, setContent] = useState(post ? post.content : ''); // 수정 모드일 경우 초기값 설정
+  const [author, setAuthor] = useState(post ? post.author : '익명'); // 수정 모드일 경우 초기값 설정
+  const [password, setPassword] = useState(post ? post.password : ''); // 수정 모드일 경우 초기값 설정
 
   useEffect(() => {
     navigation.setOptions({
-      headerTitle: '',
+      headerTitle: isEditing ? '게시글 수정' : '게시글 작성', // 수정 모드에 따라 헤더 타이틀 변경
     });
-  }, [navigation]);
+  }, [navigation, isEditing]);
 
-  const handleAddPost = async () => {
+  const handleSavePost = async () => {
     if (!title || !content) {
       Alert.alert('오류', '제목과 내용을 입력하세요.');
       return;
@@ -27,17 +28,31 @@ export default function AddPostScreen({ navigation }) {
     }
 
     try {
-      await addDoc(collection(db, 'posts'), {
-        title,
-        content,
-        author,
-        password, // 비밀번호 저장
-        timestamp: serverTimestamp(),
-      });
-      Alert.alert('완료', '게시글이 작성되었습니다.');
+      if (isEditing) {
+        // 수정 모드인 경우 기존 게시글 업데이트
+        const postRef = doc(db, 'posts', post.id);
+        await updateDoc(postRef, {
+          title,
+          content,
+          author,
+          password,
+          timestamp: serverTimestamp(),
+        });
+        Alert.alert('완료', '게시글이 수정되었습니다.');
+      } else {
+        // 새 게시글 작성
+        await addDoc(collection(db, 'posts'), {
+          title,
+          content,
+          author,
+          password,
+          timestamp: serverTimestamp(),
+        });
+        Alert.alert('완료', '게시글이 작성되었습니다.');
+      }
       navigation.goBack();
     } catch (error) {
-      Alert.alert('오류', '게시글 작성 중 문제가 발생했습니다.');
+      Alert.alert('오류', isEditing ? '게시글 수정 중 문제가 발생했습니다.' : '게시글 작성 중 문제가 발생했습니다.');
     }
   };
 
@@ -79,8 +94,8 @@ export default function AddPostScreen({ navigation }) {
         maxLength={4}
       />
 
-      <TouchableOpacity style={styles.addButton} onPress={handleAddPost}>
-        <Text style={styles.addButtonText}>게시글 작성</Text>
+      <TouchableOpacity style={styles.addButton} onPress={handleSavePost}>
+        <Text style={styles.addButtonText}>{isEditing ? '게시글 수정' : '게시글 작성'}</Text>
       </TouchableOpacity>
     </View>
   );
