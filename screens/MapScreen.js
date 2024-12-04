@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback, PermissionsAndroid ,StyleSheet} from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import Geolocation from 'react-native-geolocation-service';
 
 export default function MapScreen({ navigation, route }) {
   const [locations, setLocations] = useState([]);
@@ -16,6 +17,54 @@ export default function MapScreen({ navigation, route }) {
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [recentSearches, setRecentSearches] = useState([]);
   const [showRecentSearches, setShowRecentSearches] = useState(true);
+
+  useEffect(() => {
+    const requestLocationPermission = async () => {
+      if (Platform.OS === 'android') {
+        try {
+          const granted = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+            {
+              title: '위치 접근 권한 요청',
+              message: '현재 위치를 사용하려면 위치 접근 권한이 필요합니다.',
+              buttonNeutral: '나중에 묻기',
+              buttonNegative: '취소',
+              buttonPositive: '허용',
+            }
+          );
+          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+            getCurrentLocation();
+          } else {
+            console.log('위치 접근 권한이 거부되었습니다.');
+          }
+        } catch (err) {
+          console.warn(err);
+        }
+      } else {
+        getCurrentLocation();
+      }
+    };
+
+    requestLocationPermission();
+    fetchLocations();
+  }, []);
+
+  const getCurrentLocation = () => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setRegion((prevRegion) => ({
+          ...prevRegion,
+          latitude,
+          longitude,
+        }));
+      },
+      (error) => {
+        console.error('현재 위치를 가져오는 데 실패했습니다:', error);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
+    );
+  };
 
   // Firestore에서 데이터 검색
   const fetchLocations = async () => {
@@ -31,10 +80,6 @@ export default function MapScreen({ navigation, route }) {
     }
   };
 
-  useEffect(() => {
-    fetchLocations();
-  }, []);
-
   // 특정 강의실의 위치를 찾아 지도 중심으로 설정
   const focusMapOnRoom = (room) => {
     if (!room) return;
@@ -43,7 +88,7 @@ export default function MapScreen({ navigation, route }) {
       location.facilities.some((facility) =>
         facility.toLowerCase().includes(room.toLowerCase().trim())
       ) ||
-      location.title.toLowerCase().includes(room.toLowerCase().trim()) 
+      location.title.toLowerCase().includes(room.toLowerCase().trim())
     );
 
     if (matchingLocation) {
@@ -154,6 +199,49 @@ export default function MapScreen({ navigation, route }) {
           onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
           onPress={clearSelection}
         >
+          {/* 사용자 위치 마커 추가 */}
+          <Marker
+            coordinate={{
+              latitude: region.latitude,
+              longitude: region.longitude,
+            }}
+            onPress={() => setSelectedMarker({ title: '현재 위치', description: '이곳이 현재 위치입니다.' })}
+          >
+            <View style={{ alignItems: 'center', overflow: 'visible' }}>
+              <Text
+                style={{
+                  fontSize: 9,
+                  fontWeight: 'bold',
+                  color: 'black',
+                  textAlign: 'center',
+                  flexWrap: 'wrap',
+                }}
+                numberOfLines={0}
+              >
+                현재 위치
+              </Text>
+              <View
+                style={{
+                  width: 10,
+                  height: 10,
+                  backgroundColor: 'green',
+                  borderRadius: 80,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <View
+                  style={{
+                    width: 1,
+                    height: 1,
+                    backgroundColor: 'white',
+                    borderRadius: 10,
+                  }}
+                />
+              </View>
+            </View>
+          </Marker>
+
           {locations.map((location) => (
             <Marker
               key={location.id}
@@ -180,8 +268,7 @@ export default function MapScreen({ navigation, route }) {
                   style={{
                     width: selectedMarker?.id === location.id ? 20 : 20,
                     height: selectedMarker?.id === location.id ? 20 : 20,
-                    backgroundColor:
-                      selectedMarker?.id === location.id ? 'blue' : 'red',
+                    backgroundColor: selectedMarker?.id === location.id ? 'blue' : 'red',
                     borderRadius: 80,
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -233,6 +320,7 @@ export default function MapScreen({ navigation, route }) {
     </TouchableWithoutFeedback>
   );
 }
+
 
 const styles = StyleSheet.create({
   searchContainer: {
