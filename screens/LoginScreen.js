@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
     paddingTop: 150, // 로그인 화면을 아래로 이동
   },
   imageContainer: {
-    marginBottom: 20,
+    marginBottom: 0,
   },
   image: {
     width: 150,
@@ -180,7 +180,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 40,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    color: '#1D3557',
     marginBottom: 30,
   },
   input: {

@@ -19,6 +19,11 @@ export default function SetPassWordScreen({ navigation }) {
   }, [navigation]);
 
   const handleSavePassword = async () => {
+    // 빈칸 확인
+    if (!password.trim() || !passwordConfirm.trim()) {
+     Alert.alert('오류', '비밀번호를 입력해주세요.');
+      return;
+    }
     if (password !== passwordConfirm) {
       Alert.alert('오류', '비밀번호가 일치하지 않습니다.');
       return;
@@ -91,7 +96,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 40,
-    fontWeight: 500,
+    fontWeight: 'bold',
+    color: '#1D3557',
     marginBottom: 30,
   },
   label: {

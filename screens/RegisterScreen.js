@@ -1,7 +1,11 @@
-import { StatusBar } from 'expo-status-bar';
+import { doc, getDoc } from 'firebase/firestore'; // Firestore 메서드 추가
+import { Alert } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity } from
+ 'react-native';
 import { Image } from 'expo-image';
+// Firebase Firestore 가져오기
+import { db } from '../firebaseConfig'; // Firestore 데이터베이스 가져오기
 // 전역 상태를 가져오기 위해 useSignUp 추가
 import { useSignUp } from '../SignUpContext';
 
@@ -27,8 +31,36 @@ export default function RegisterScreen({ navigation }) { // 회원가입창 1
   }, [navigation]);
 
   // 다음 화면으로 이동
-  const handleNavigate = () => {
-    navigation.navigate('SelectListScreen'); // 회원가입 다음 창으로 넘어가는 로직
+  const handleNavigate = async () => {
+    // 빈칸 확인
+    if (!signUpData.studentId || !signUpData.name) {
+      Alert.alert('오류', '모든 정보를 입력해주세요.');
+      return;
+    }
+
+    // 학번 길이 체크
+    if (signUpData.studentId.length !== 7) {
+    Alert.alert('오류', '학번은 7자리여야 합니다.');
+    return;   
+    }
+  
+    try {
+      // Firestore에서 학번 문서 조회
+      const studentRef = doc(db, 'users', signUpData.studentId); // 'users' 컬렉션에서 학번을 키로 사용
+      const studentDoc = await getDoc(studentRef);
+  
+      if (studentDoc.exists()) {
+        // 학번이 이미 존재할 경우
+        Alert.alert('오류', '이미 등록된 학번입니다.');
+        return;
+      }
+  
+      // 학번이 존재하지 않을 경우 다음 화면으로 이동
+      navigation.navigate('SelectListScreen');
+    } catch (error) {
+      console.error('Firestore 학번 확인 오류:', error);
+      Alert.alert('오류', '학번 확인 중 문제가 발생했습니다.');
+    }
   };
 
   return (
@@ -90,8 +122,9 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 40,
-    fontWeight: '500',
-    marginBottom: 30, // 텍스트와 입력 필드 간격
+    fontWeight: 'bold',
+    color: '#1D3557',
+    marginBottom: 30,
   },
   label: {
     width: '80%',
