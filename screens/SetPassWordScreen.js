@@ -90,8 +90,8 @@ const styles = StyleSheet.create({
     height: 150,
   },
   title: {
-    fontSize: 36,
-    fontWeight: 'bold',
+    fontSize: 40,
+    fontWeight: 500,
     marginBottom: 30,
   },
   label: {
