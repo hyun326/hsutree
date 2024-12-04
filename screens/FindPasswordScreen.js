@@ -34,6 +34,7 @@ export default function FindPasswordScreen({ navigation }) {
       }
 
       // Firestore에서 가져온 데이터와 입력 데이터 비교
+      const trimmedNumber = number.trim(); // 학번의 공백 제거
       const studentData = studentDoc.data();
       const trimmedEmail = email.trim().toLowerCase(); // 이메일 소문자로 변환
       const trimmedName = name.trim().replace(/\s+/g, ''); // 입력된 이름의 모든 공백 제거
@@ -43,7 +44,8 @@ export default function FindPasswordScreen({ navigation }) {
         studentData.email.toLowerCase() === trimmedEmail && // 이메일 대소문자 무시
         storedName === trimmedName // 이름 공백 제거 후 비교
       ) {
-        navigation.navigate('SetPassWordScreen'); // 비밀번호 변경 화면으로 이동
+        console.log('Navigating to SetPassWordScreen with Student ID:', number.trim()); //디버깅
+        navigation.navigate('SetPassWordScreen', { studentId: number.trim() }); // 비밀번호 변경 화면으로 이동
       } else {
         Alert.alert('오류', '입력하신 정보가 일치하지 않습니다. 다시 확인해주세요.');
       }
