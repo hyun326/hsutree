@@ -129,26 +129,28 @@ export default function SelectListScreen({ navigation }) {
 
       {/* 드롭다운 */}
       <View style={[styles.dropdownContainer, { zIndex: 3000 }]}>
-      <DropDownPicker
-  open={open}
-  setOpen={setOpen}
-  value={selected}
-  setValue={setSelected}
-  items={data}
-  placeholder="학과 이름을 선택하세요"
-  style={styles.dropdown}
-  dropDownContainerStyle={styles.dropdownList}
-  listMode="SCROLLVIEW" // 스크롤 활성화
-  dropDownDirection="BOTTOM"
-  maxHeight={200} // 스크롤이 필요하도록 최대 높이 설정
-  scrollViewProps={{
-    nestedScrollEnabled: true, // 중첩 스크롤 활성화
-    showsVerticalScrollIndicator: true, // 스크롤바 표시
-    keyboardShouldPersistTaps: 'handled',
-  }}
-  zIndex={3000}
-  zIndexInverse={1000}
-/>
+        <DropDownPicker
+          open={open}
+          setOpen={setOpen}
+          value={selected}
+          setValue={setSelected}
+          items={data}
+          placeholder="학과 이름을 선택하세요" // 드롭다운 기본 표시 텍스트
+          style={styles.dropdown}
+          dropDownContainerStyle={styles.dropdownList}
+          zIndex={3000} // 드롭다운 리스트 우선순위
+          zIndexInverse={1000} // 리스트 반전 우선순위
+          searchable={true} // 검색 기능 활성화
+          searchPlaceholder="검색하세요..." // 검색 입력 필드의 플레이스홀더
+          listMode="SCROLLVIEW" // 리스트 스크롤 모드
+          dropDownDirection="BOTTOM" // 드롭다운 방향 고정 (아래로만 열림)
+          maxHeight={210} // 드롭다운 창 최대 높이 설정
+          scrollViewProps={{
+            nestedScrollEnabled: true,
+            showsVerticalScrollIndicator: true,
+            keyboardShouldPersistTaps: 'handled',
+          }}
+        />
       </View>
 
       {/* 버튼 영역 */}
