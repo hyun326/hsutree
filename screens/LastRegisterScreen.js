@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { query, where, collection, getDocs } from 'firebase/firestore'; // Firestore 관련 메서드 추가
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { Image } from 'expo-image';
 // 전역 상태 및 Firestore 가져오기
@@ -13,18 +14,57 @@ export default function LastRegisterScreen({ navigation }) {
 
   // Firestore에 데이터 저장
   const handleRegister = async () => {
+    // 빈칸 확인
+    if (
+      !signUpData.nickname ||
+      !signUpData.studentId ||
+      !signUpData.password ||
+      !signUpData.passwordConfirm ||
+      !signUpData.email
+    ) {
+      Alert.alert('오류', '모든 정보를 입력해주세요.');
+      return;
+    }
+  
     // 비밀번호와 비밀번호 확인이 일치하지 않으면 경고 메시지 표시
     if (signUpData.password !== signUpData.passwordConfirm) {
       Alert.alert('오류', '비밀번호와 비밀번호 확인이 일치하지 않습니다.');
       return;
     }
 
+    // 비밀번호 형식 체크 (최소 8자, 영어와 숫자 포함)
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!passwordRegex.test(signUpData.password)) {
+      Alert.alert('오류', '비밀번호는 영어와 숫자를 포함하여 최소 8자 이상이어야 합니다.');
+    return;
+    }
+  
     try {
+      // Firestore에서 닉네임과 이메일 중복 확인
+      const usersCollection = collection(db, 'users'); // 'users' 컬렉션 참조
+      const nicknameQuery = query(usersCollection, where('nickname', '==', signUpData.nickname));
+      const emailQuery = query(usersCollection, where('email', '==', signUpData.email));
+  
+      // 닉네임 중복 확인
+      const nicknameSnapshot = await getDocs(nicknameQuery);
+      if (!nicknameSnapshot.empty) {
+        Alert.alert('오류', '이미 사용 중인 닉네임입니다.');
+        return;
+      }
+  
+      // 이메일 중복 확인
+      const emailSnapshot = await getDocs(emailQuery);
+      if (!emailSnapshot.empty) {
+        Alert.alert('오류', '이미 등록된 이메일입니다.');
+        return;
+      }
+  
       // Firestore에 데이터 저장
       await setDoc(doc(db, 'users', signUpData.studentId), signUpData);
-      Alert.alert('회원가입 완료', '데이터가 성공적으로 저장되었습니다.');
+      Alert.alert('회원가입 완료', '회원 정보가 저장되었습니다.');
       navigation.navigate('Login'); // 로그인 화면으로 이동
     } catch (error) {
+      console.error('Firestore 중복 확인 오류:', error);
       Alert.alert('오류', '데이터 저장 중 문제가 발생했습니다.');
     }
   };
@@ -68,7 +108,7 @@ export default function LastRegisterScreen({ navigation }) {
       />
 
       {/* 비밀번호 입력 */}
-      <Text style={styles.label}>비밀번호</Text>
+      <Text style={styles.label}>비밀번호 (영어와 숫자를 포함하며 8자 이상)</Text>
       <TextInput
         style={styles.input}
         placeholder="비밀번호를 입력하세요"
@@ -122,6 +162,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 40,
     fontWeight: 'bold',
+    color: '#1D3557',
     marginBottom: 30,
   },
   label: {

@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Image } from 'expo-image';
-// 전역 상태 가져오기
-import { useSignUp } from '../SignUpContext';
+import { doc, getDoc } from 'firebase/firestore'; // Firestore 메서드 추가
+import { db } from '../firebaseConfig'; // Firestore 초기화 가져오기
 
 const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
 
 export default function FindPasswordScreen({ navigation }) {
-  const { signUpData } = useSignUp(); // 전역 상태 가져오기
   const [number, setNumber] = useState(''); // 학번
   const [email, setEmail] = useState(''); // 이메일
   const [name, setName] = useState(''); // 이름
@@ -16,25 +15,43 @@ export default function FindPasswordScreen({ navigation }) {
     navigation.setOptions({ headerShown: false }); // 네비게이션 바 숨기기
   }, [navigation]);
 
-  const handleNavigate = () => {
-    // 디버깅: 입력 값과 전역 상태 출력
-    console.log('입력된 값:', { number, email, name });
-    console.log('전역 상태 값:', signUpData);
+  const handleNavigate = async () => {
+    // 빈 입력 값 확인
+    if (!number.trim() || !email.trim() || !name.trim()) {
+      Alert.alert('오류', '모든 정보를 입력해주세요.');
+      return;
+    }
 
-    // 입력 값과 전역 상태 값을 공백 제거 후 비교
-    const trimmedNumber = number.trim();
-    const trimmedEmail = email.trim().toLowerCase(); // 이메일 소문자로 변환
-    const trimmedName = name.trim().replace(/\s+/g, ''); // 입력된 이름의 모든 공백 제거
-    const storedName = signUpData.name.replace(/\s+/g, ''); // 전역 상태 이름의 모든 공백 제거
+    try {
+      // Firestore에서 학번으로 문서 가져오기
+      const studentRef = doc(db, 'users', number.trim()); // 'users' 컬렉션에서 학번을 키로 사용
+      const studentDoc = await getDoc(studentRef);
 
-    if (
-      signUpData.studentId === trimmedNumber &&
-      signUpData.email.toLowerCase() === trimmedEmail && // 이메일 대소문자 무시
-      storedName === trimmedName
-    ) {
-      navigation.navigate('SetPassWordScreen'); // 비밀번호 변경 화면으로 이동
-    } else {
-      Alert.alert('오류', '정보가 일치하지 않습니다. 다시 확인해주세요.');
+      if (!studentDoc.exists()) {
+        // 학번이 존재하지 않으면 경고
+        Alert.alert('오류', '입력하신 학번에 해당하는 정보가 없습니다.');
+        return;
+      }
+
+      // Firestore에서 가져온 데이터와 입력 데이터 비교
+      const trimmedNumber = number.trim(); // 학번의 공백 제거
+      const studentData = studentDoc.data();
+      const trimmedEmail = email.trim().toLowerCase(); // 이메일 소문자로 변환
+      const trimmedName = name.trim().replace(/\s+/g, ''); // 입력된 이름의 모든 공백 제거
+      const storedName = studentData.name.replace(/\s+/g, ''); // Firestore에서 가져온 이름의 모든 공백 제거
+
+      if (
+        studentData.email.toLowerCase() === trimmedEmail && // 이메일 대소문자 무시
+        storedName === trimmedName // 이름 공백 제거 후 비교
+      ) {
+        console.log('Navigating to SetPassWordScreen with Student ID:', number.trim()); //디버깅
+        navigation.navigate('SetPassWordScreen', { studentId: number.trim() }); // 비밀번호 변경 화면으로 이동
+      } else {
+        Alert.alert('오류', '입력하신 정보가 일치하지 않습니다. 다시 확인해주세요.');
+      }
+    } catch (error) {
+      console.error('Firestore 정보 확인 오류:', error);
+      Alert.alert('오류', '정보 확인 중 문제가 발생했습니다.');
     }
   };
 
@@ -102,8 +119,9 @@ const styles = StyleSheet.create({
     height: 150,
   },
   title: {
-    fontSize: 36,
+    fontSize: 40,
     fontWeight: 'bold',
+    color: '#1D3557',
     marginBottom: 30,
   },
   label: {

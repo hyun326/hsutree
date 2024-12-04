@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
 import DropDownPicker from 'react-native-dropdown-picker';
@@ -13,12 +14,83 @@ export default function SelectListScreen({ navigation }) {
   const [open, setOpen] = useState(false); // 드롭다운 열림/닫힘 상태 관리
 
   const data = [
-    { label: '컴퓨터공학부', value: '컴퓨터공학부' },
+        // IT공과대학
+        { label: '컴퓨터공학부', value: '컴퓨터공학부' },
+        { label: '모바일소프트웨어트랙', value: '모바일소프트웨어트랙' },
+        { label: '웹공학트랙', value: '웹공학트랙' },
+        { label: '빅데이터트랙', value: '빅데이터트랙' },
+        { label: '인터넷응용트랙', value: '인터넷응용트랙' },
+        { label: '디지털컨텐츠·가상실트랙', value: '디지털컨텐츠·가상실트랙' },
+        { label: '기계전자공학부', value: '기계전자공학부' },
+        { label: '전기트랙', value: '전기트랙' },
+        { label: '시스템반도체트랙', value: '시스템반도체트랙' },
+        { label: '기계시스템트랙', value: '기계시스템트랙' },
+        { label: '기계자동화트랙', value: '기계자동화트랙' },
+        { label: '산업시스템공학부', value: '산업시스템공학부' },
+        { label: '산업공학트랙', value: '산업공학트랙' },
+        { label: '지능형제조시스템트랙', value: '지능형제조시스템트랙' },
+        
+    // 창의융합대학
+    { label: '상상력인재학부', value: '상상력인재학부' },
+    { label: '문화융합콘텐츠학과', value: '문화융합콘텐츠학과' },
+    { label: 'AI응용학과', value: 'AI응용학과' },
+    { label: '융합보안학과', value: '융합보안학과' },
+    { label: '미래모빌리티학과 (신설)', value: '미래모빌리티학과' },
+  
+    // 디자인대학
+    { label: '글로벌패션산업학부', value: '글로벌패션산업학부' },
+    { label: '패션디자인트랙', value: '패션디자인트랙' },
+    { label: '패션크레이티브디렉션트랙', value: '패션크레이티브디렉션트랙' },
     { label: 'ICT디자인학부', value: 'ICT디자인학부' },
-    { label: 'IT공과대학', value: 'IT공과대학' },
-    { label: 'IT융합공학부', value: 'IT융합공학부' },
-    { label: '기계전자공학부', value: '기계전자공학부' },
-    { label: '스마트 경영공학부', value: '스마트 경영공학부' },
+    { label: '뉴미디어 광고·커뮤니케이션디자인트랙', value: '뉴미디어 광고·커뮤니케이션디자인트랙' },
+    { label: '브랜드·패키지디자인트랙', value: '브랜드·패키지디자인트랙' },
+    { label: '영상·애니메이션디자인트랙', value: '영상·애니메이션디자인트랙' },
+    { label: 'UX/UI디자인트랙', value: 'UX/UI디자인트랙' },
+    { label: '게임그래픽디자인트랙', value: '게임그래픽디자인트랙' },
+    { label: '인테리어디자인트랙', value: '인테리어디자인트랙' },
+    { label: 'VMD·전시디자인트랙', value: 'VMD·전시디자인트랙' },
+    { label: '뷰티디자인매니지먼트학과', value: '뷰티디자인매니지먼트학과' },
+  
+    // 미래융합사회과학대학
+    { label: '사회과학부', value: '사회과학부' },
+    { label: '국제무역트랙', value: '국제무역트랙' },
+    { label: '글로벌비즈니스트랙', value: '글로벌비즈니스트랙' },
+    { label: '기업·경제분석트랙', value: '기업·경제분석트랙' },
+    { label: '경제금융투자트랙', value: '경제금융투자트랙' },    
+    { label: '공공행정트랙', value: '공공행정트랙' },
+    { label: '법&정책트랙', value: '법&정책트랙' },
+    { label: '부동산트랙', value: '부동산트랙' },
+    { label: '스마트도시·교통계획트랙', value: '스마트도시·교통계획트랙' },
+    { label: '벤처경영트랙', value: '벤처경영트랙' },
+    { label: '회계·재무경영트랙', value: '회계·재무경영트랙' },
+  
+  // 크리에이티브인문예술대학
+  { label: '영미문학콘텐츠트랙', value: '영미문학콘텐츠트랙' },
+  { label: '영미언어정보트랙', value: '영미언어정보트랙' },
+  { label: '한국어교육트랙', value: '한국어교육트랙' },
+  { label: '역사문화큐레이션트랙', value: '역사문화큐레이션트랙' },
+  { label: '역사콘텐츠트랙', value: '역사콘텐츠트랙' },
+  { label: '지식정보문화트랙', value: '지식정보문화트랙' },
+  { label: '디지털인문정보학트랙', value: '디지털인문정보학트랙' },
+  { label: '예술학부', value: '예술학부' },
+  { label: '동양화전공', value: '동양화전공' },
+  { label: '서양화전공', value: '서양화전공' },
+  { label: '한국무용전공', value: '한국무용전공' },
+  { label: '현대무용전공', value: '현대무용전공' },
+  { label: '발레전공', value: '발레전공' },
+
+  // 미래플러스대학
+  { label: '호텔외식경영학과', value: '호텔외식경영학과' },
+  { label: '융합행정학과', value: '융합행정학과' },
+  { label: '비즈니스컨설팅학과', value: '비즈니스컨설팅학과' },
+  { label: '뷰티디자인학과', value: '뷰티디자인학과' },
+  { label: 'ICT융합디자인학과', value: 'ICT융합디자인학과' },
+  { label: '미래인재학부', value: '미래인재학부' },
+
+  // 상상력교양대학
+  { label: '기초교양학부', value: '기초교양학부' },
+  { label: '소양·핵심교양학부', value: '소양·핵심교양학부' },
+  { label: '자율교양학부', value: '자율교양학부' },
   ];
 
   useEffect(() => {
@@ -26,6 +98,11 @@ export default function SelectListScreen({ navigation }) {
   }, [navigation]);
 
   const handleNext = () => {
+    // 학과 선택 여부 확인
+  if (!selected) {
+    Alert.alert('오류', '학과를 선택해주세요.');
+    return;
+  }
     setSignUpData({ ...signUpData, department: selected }); // 선택한 학과 정보를 전역 상태에 저장
     navigation.navigate('LastRegisterScreen'); // 다음 화면으로 이동
   };
@@ -67,9 +144,11 @@ export default function SelectListScreen({ navigation }) {
           searchPlaceholder="검색하세요..." // 검색 입력 필드의 플레이스홀더
           listMode="SCROLLVIEW" // 리스트 스크롤 모드
           dropDownDirection="BOTTOM" // 드롭다운 방향 고정 (아래로만 열림)
-          maxHeight={200} // 드롭다운 창 최대 높이 설정
+          maxHeight={210} // 드롭다운 창 최대 높이 설정
           scrollViewProps={{
-            nestedScrollEnabled: true, // 스크롤 가능 설정
+            nestedScrollEnabled: true,
+            showsVerticalScrollIndicator: true,
+            keyboardShouldPersistTaps: 'handled',
           }}
         />
       </View>
@@ -108,7 +187,8 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 40,
     fontWeight: 'bold',
-    marginBottom: 30, // 텍스트와 입력 필드 간격
+    color: '#1D3557',
+    marginBottom: 30,
   },
   dropdownContainer: {
     width: '80%', // 드롭다운 컨테이너 너비 설정

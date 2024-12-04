@@ -8,6 +8,17 @@ import { doc, getDoc } from 'firebase/firestore'; // Firestore에서 데이터 �
 const blurhash = '|rF?hV%2WCj[ayj[a|j[az_NaeWBj@ayfRayfQfQM{M|azj[azf6fQfQfQIpWXofj[ayj[j[fQayWCoeoeaya}j[ayfQa{oLj?j[WVj[ayayj[fQoff7azayj[ayj[j[ayofayayayj[fQj[ayayj[ayfjj[j[ayjuayj[';
 
 export default function LoginScreen({ navigation }) {
+  const [showSplash, setShowSplash] = useState(true); // 스플래시 화면 상태
+
+  useEffect(() => {
+    // 2초 후에 스플래시 화면을 종료
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2000);
+
+    return () => clearTimeout(timer); // 클린업 함수로 타이머 정리
+  }, []);
+
   const [studentId, setStudentId] = useState(''); // 학번 상태 관리
   const [password, setPassword] = useState(''); // 비밀번호 상태 관리
 
@@ -53,57 +64,72 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* 로고 이미지 */}
-      <View style={styles.imageContainer}>
-        <Image
-          style={styles.image}
-          source={require('../assets/logo.png')}
-          placeholder={{ blurhash }}
-          contentFit="cover"
-          transition={1000}
-        />
-      </View>
-      
-      {/* 앱 제목 */}
-      <Text style={styles.title}>한성대숲</Text>
+      {showSplash ? (
+        // 스플래시 화면 렌더링
+        <View style={styles.splashContainer}>
+          <Image
+            style={styles.splashImage}
+            source={require('../assets/logo.png')} // 로고 이미지 경로
+          />
+          <Text style={styles.splashText}>한성대숲</Text>
+          <Text style={styles.footerText}>product. hsu student</Text>
+        </View>
+      ) : (
+        // 로그인 화면 렌더링
+        <View style={styles.loginContainer}>
+          {/* 로고 이미지 */}
+          <View style={styles.imageContainer}>
+            <Image
+              style={styles.image}
+              source={require('../assets/logo.png')}
+              placeholder={{ blurhash }}
+              contentFit="cover"
+              transition={1000}
+            />
+          </View>
 
-      {/* 학번 입력 필드 */}
-      <TextInput
-        style={styles.input}
-        placeholder="학번"
-        value={studentId}
-        onChangeText={setStudentId}
-        keyboardType="numeric"
-        autoCapitalize="none"
-      />
+          {/* 앱 제목 */}
+          <Text style={styles.title}>한성대숲</Text>
 
-      {/* 비밀번호 입력 필드 */}
-      <TextInput
-        style={styles.input}
-        placeholder="비밀번호"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
+          {/* 학번 입력 필드 */}
+          <TextInput
+            style={styles.input}
+            placeholder="학번"
+            value={studentId}
+            onChangeText={setStudentId}
+            keyboardType="numeric"
+            autoCapitalize="none"
+          />
 
-      {/* 로그인 버튼 */}
-      <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-        <Text style={styles.buttonText}>로그인</Text>
-      </TouchableOpacity>
+          {/* 비밀번호 입력 필드 */}
+          <TextInput
+            style={styles.input}
+            placeholder="비밀번호"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-      {/* 비밀번호 찾기 링크 */}
-      <View style={{ width: '90%', alignItems: 'flex-start', paddingHorizontal: '10%' }}> 
-        <Text style={styles.linkText} onPress={handleNavigate}>
-          Forgot Password?
-        </Text>
-      </View>
-     
-      {/* 회원가입 버튼 */}
-      <View style={{ width: '100%', alignItems: 'flex-end', paddingHorizontal: '10%' }}>
-        <TouchableOpacity style={[styles.registerButton, { width: '40%' }]} onPress={RegisterNavigate}>
-          <Text style={styles.buttonText}>회원가입</Text>
-        </TouchableOpacity>
-      </View>
+          {/* 로그인 버튼 */}
+          <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <Text style={styles.buttonText}>로그인</Text>
+          </TouchableOpacity>
+
+          {/* 비밀번호 찾기 링크 */}
+          <View style={{ width: '90%', alignItems: 'flex-start', paddingHorizontal: '10%' }}>
+            <Text style={styles.linkText} onPress={handleNavigate}>
+              Forgot Password?
+            </Text>
+          </View>
+
+          {/* 회원가입 버튼 */}
+          <View style={{ width: '100%', alignItems: 'flex-end', paddingHorizontal: '10%' }}>
+            <TouchableOpacity style={[styles.registerButton, { width: '40%' }]} onPress={RegisterNavigate}>
+              <Text style={styles.buttonText}>회원가입</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -115,10 +141,38 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingTop: 100,
+  },
+  splashContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  splashImage: {
+    width: 150, // 로그인 화면과 동일 크기
+    height: 150, // 로그인 화면과 동일 크기
+    bottom: 140,
+  },
+  splashText: {
+    fontSize: 40, // 로그인 화면과 동일 크기
+    fontWeight: 'bold', // 텍스트를 굵게 설정
+    color: '#1D3557', // 기존 색상 유지
+    bottom: 120, // 하단 고정
+  },
+  footerText: {
+    fontSize: 20,
+    fontWeight: 'bold', // 하단 텍스트 굵게 설정
+    color: 'black',
+    position: 'absolute',
+    bottom: 30, // 하단 고정
+  },
+  loginContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: 150, // 로그인 화면을 아래로 이동
   },
   imageContainer: {
-    marginBottom: 20,
+    marginBottom: 0,
   },
   image: {
     width: 150,
@@ -126,7 +180,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 40,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    color: '#1D3557',
     marginBottom: 30,
   },
   input: {
@@ -154,6 +209,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 10,
   },
   linkText: {
     color: 'blue',
@@ -163,5 +219,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontSize: 18,
+    fontWeight: 'bold',
   },
 });
+
