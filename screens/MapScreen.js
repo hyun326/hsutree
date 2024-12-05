@@ -15,12 +15,13 @@ export default function MapScreen({ navigation, route }) {
 
   const [locations, setLocations] = useState([]);
   const [region, setRegion] = useState(initialRegion);
+  const [currentLocation, setCurrentLocation] = useState(initialRegion); // 현재 위치를 별도로 관리
   const [search, setSearch] = useState('');
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [recentSearches, setRecentSearches] = useState([]);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
   const [mapReady, setMapReady] = useState(false);
-  const [locationSubscription, setLocationSubscription] = useState(null); // 위치 추적 구독 저장
+  const [locationSubscription, setLocationSubscription] = useState(null);
 
   useEffect(() => {
     const requestLocationPermission = async () => {
@@ -37,7 +38,6 @@ export default function MapScreen({ navigation, route }) {
     fetchLocations();
 
     return () => {
-      // 컴포넌트 언마운트 시 위치 추적 중지
       if (locationSubscription) {
         locationSubscription.remove();
       }
@@ -54,8 +54,8 @@ export default function MapScreen({ navigation, route }) {
         },
         (location) => {
           const { latitude, longitude } = location.coords;
-          setRegion((prevRegion) => ({
-            ...prevRegion,
+          setCurrentLocation((prevLocation) => ({
+            ...prevLocation,
             latitude,
             longitude,
           }));
@@ -242,8 +242,8 @@ export default function MapScreen({ navigation, route }) {
           {/* 사용자 위치 커스텀 마커 */}
           <Marker
             coordinate={{
-              latitude: region.latitude,
-              longitude: region.longitude,
+              latitude: currentLocation.latitude,
+              longitude: currentLocation.longitude,
             }}
             onPress={() => setSelectedMarker({ title: '현재 위치', description: '이곳이 현재 위치입니다.' })}
           >
