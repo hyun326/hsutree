@@ -121,14 +121,19 @@ const ScheduleScreen = ({ navigation }) => {
   const captureAndShare = async () => {
     try {
       const uri = await viewShotRef.current.capture();
-      await Sharing.shareAsync(uri);
+      if (uri) {
+        await Sharing.shareAsync(uri);
+      } else {
+        Alert.alert('오류', '스크린샷을 생성할 수 없습니다.');
+      }
     } catch (error) {
       console.error('공유 실패:', error);
+      Alert.alert('오류', '공유 중 문제가 발생했습니다.');
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <View style={styles.container}>
       <View style={[styles.headerContainer, { paddingTop: 30 }]}>
         <Text style={styles.title}>시간표 관리</Text>
         <View style={styles.buttonContainer}>
@@ -141,8 +146,8 @@ const ScheduleScreen = ({ navigation }) => {
         </View>
       </View>
 
-      <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
-        <View style={styles.table}>
+      <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }} style={styles.viewShot}>
+        <ScrollView contentContainerStyle={styles.table}>
           <View style={styles.headerRow}>
             <View style={styles.timeLabel} />
             {days.map((day, index) => (
@@ -169,7 +174,7 @@ const ScheduleScreen = ({ navigation }) => {
               ))}
             </View>
           ))}
-        </View>
+        </ScrollView>
       </ViewShot>
 
       {/* 강의 추가/수정 다이얼로그 */}
@@ -197,13 +202,13 @@ const ScheduleScreen = ({ navigation }) => {
         <Dialog.Button label="강의실 위치 보기" onPress={handleMapNavigation} />
         <Dialog.Button label="취소" onPress={() => setOptionDialogVisible(false)} />
       </Dialog.Container>
-    </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
     padding: 13,
     backgroundColor: '#F5F5F5',
   },
@@ -245,8 +250,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  table: {
+  viewShot: {
     flex: 1,
+    backgroundColor: '#FFF',
+    marginBottom: 20,
+  },
+  table: {
+    flexGrow: 1,
+    padding: 5,
   },
   headerRow: {
     flexDirection: 'row',
