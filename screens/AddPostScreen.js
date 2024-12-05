@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { useSignUp } from '../SignUpContext'; // Context에서 데이터 가져오기
 
 export default function AddPostScreen({ route, navigation }) {
   const { post, isEditing } = route.params || {};
+  const { signUpData } = useSignUp(); // 로그인 정보 가져오기
+
   const [title, setTitle] = useState(post ? post.title : ''); // 수정 모드일 경우 초기값 설정
   const [content, setContent] = useState(post ? post.content : ''); // 수정 모드일 경우 초기값 설정
-  const [author, setAuthor] = useState(post ? post.author : '익명'); // 수정 모드일 경우 초기값 설정
+  const [author, setAuthor] = useState(post ? post.author : signUpData.nickname || '익명'); // 로그인된 사용자 닉네임 기본값 설정
   const [password, setPassword] = useState(post ? post.password : ''); // 수정 모드일 경우 초기값 설정
 
   useEffect(() => {
@@ -27,6 +30,24 @@ export default function AddPostScreen({ route, navigation }) {
       return;
     }
 
+    // 익명 여부 선택
+    Alert.alert(
+      '게시글 작성',
+      '익명으로 게시글을 작성하시겠습니까?',
+      [
+        {
+          text: '아니요',
+          onPress: async () => await savePost(signUpData.nickname || '익명'), // 닉네임으로 게시글 작성
+        },
+        {
+          text: '네',
+          onPress: async () => await savePost('익명'), // 익명으로 게시글 작성
+        },
+      ]
+    );
+  };
+
+  const savePost = async (selectedAuthor) => {
     try {
       if (isEditing) {
         // 수정 모드인 경우 기존 게시글 업데이트
@@ -34,7 +55,7 @@ export default function AddPostScreen({ route, navigation }) {
         await updateDoc(postRef, {
           title,
           content,
-          author,
+          author: selectedAuthor,
           password,
           timestamp: serverTimestamp(),
         });
@@ -44,7 +65,7 @@ export default function AddPostScreen({ route, navigation }) {
         await addDoc(collection(db, 'posts'), {
           title,
           content,
-          author,
+          author: selectedAuthor,
           password,
           timestamp: serverTimestamp(),
         });
@@ -78,9 +99,9 @@ export default function AddPostScreen({ route, navigation }) {
       <Text style={styles.label}>작성자</Text>
       <TextInput
         style={styles.input}
-        placeholder="작성자를 입력하세요 (기본값: 익명)"
-        value={author}
-        onChangeText={setAuthor}
+        placeholder="작성자를 입력하세요 (기본값: 닉네임)"
+        value={author} // 닉네임이 기본값으로 표시됨
+        editable={false} // 입력 불가
       />
 
       <Text style={styles.label}>비밀번호</Text>

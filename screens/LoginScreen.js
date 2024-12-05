@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSignUp } from '../SignUpContext';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { db } from '../firebaseConfig'; // Firebase 설정 파일 가져오기
@@ -18,7 +19,8 @@ export default function LoginScreen({ navigation }) {
 
     return () => clearTimeout(timer); // 클린업 함수로 타이머 정리
   }, []);
-
+  
+  const { setSignUpData } = useSignUp(); // 전역 상태 관리 함수
   const [studentId, setStudentId] = useState(''); // 학번 상태 관리
   const [password, setPassword] = useState(''); // 비밀번호 상태 관리
 
@@ -30,27 +32,33 @@ export default function LoginScreen({ navigation }) {
   // 로그인 처리 함수
   const handleLogin = async () => {
     try {
-      const userRef = doc(db, "users", studentId); // 학번을 문서 ID로 사용
-      const docSnap = await getDoc(userRef);
+        const userRef = doc(db, "users", studentId);
+        const docSnap = await getDoc(userRef);
 
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        
-        // 비밀번호 비교
-        if (userData.password === password) {
-          console.log('로그인 성공:', userData);
-          navigation.navigate('MainWithTabs'); // MainWithTabs로 이동
+        if (docSnap.exists()) {
+            const userData = docSnap.data();
+            if (userData.password === password) {
+                console.log('로그인 성공:', userData);
+
+                // 닉네임 정보를 Context에 저장
+                setSignUpData((prev) => ({
+                    ...prev,
+                    studentId,
+                    nickname: userData.nickname,
+                }));
+
+                navigation.navigate('MainWithTabs'); // 메인 화면으로 이동
+            } else {
+                Alert.alert('로그인 실패', '비밀번호가 일치하지 않습니다.');
+            }
         } else {
-          Alert.alert('로그인 실패', '비밀번호가 일치하지 않습니다.');
+            Alert.alert('로그인 실패', '등록된 학번이 없습니다.');
         }
-      } else {
-        Alert.alert('로그인 실패', '등록된 학번이 없습니다.');
-      }
     } catch (error) {
-      console.error('로그인 오류:', error);
-      Alert.alert('로그인 실패', '알 수 없는 오류가 발생했습니다.');
+        console.error('로그인 오류:', error);
+        Alert.alert('로그인 실패', '알 수 없는 오류가 발생했습니다.');
     }
-  };
+};
 
   // 비밀번호 찾기 화면으로 이동
   const handleNavigate = () => {
