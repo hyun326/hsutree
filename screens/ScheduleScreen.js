@@ -1,13 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, SafeAreaView, Share, Platform } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, SafeAreaView, Share } from 'react-native';
 import Dialog from 'react-native-dialog';
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
 
 const ScheduleScreen = ({ navigation }) => {
   const rows = 14;
   const cols = 5;
   const days = ['월', '화', '수', '목', '금'];
+  const [roomNumber, setRoomNumber] = useState('');  // 새 상태 추가
 
   const viewShotRef = useRef();
 
@@ -53,16 +52,21 @@ const ScheduleScreen = ({ navigation }) => {
     } else {
       setLecture('');
       setRoom('');
+      setRoomNumber('');
       setDialogVisible(true);
     }
   };
 
-  const handleSave = (lecture, room) => {
-    if (lecture && room && selectedCell) {
+  const handleSave = (lecture, room, roomNumber) => {
+    if (!lecture || !room || !roomNumber) {
+      Alert.alert('오류', '강의명, 강의실, 강의실 호수를 모두 입력해야 합니다.');
+      return;
+    }
+    if (selectedCell) {
       const { rowIndex, colIndex } = selectedCell;
-      const lectureRoomKey = `${lecture}-${room}`;
-      const existingColor = lectureRoomColorMap[lectureRoomKey];
+      const lectureRoomKey = `${lecture}-${room}-${roomNumber}`;  // 강의명, 강연실, 호수를 키로 사용
 
+      const existingColor = lectureRoomColorMap[lectureRoomKey];
       const pastelColor = existingColor || generatePastelColor();
       if (!existingColor) {
         setLectureRoomColorMap((prevMap) => ({
@@ -72,7 +76,7 @@ const ScheduleScreen = ({ navigation }) => {
       }
 
       const newGrid = [...grid];
-      newGrid[rowIndex][colIndex] = { lecture, room, color: pastelColor };
+      newGrid[rowIndex][colIndex] = { lecture, room, roomNumber, color: pastelColor };  // 호수 추가
       setGrid(newGrid);
       setDialogVisible(false);
     }
@@ -95,7 +99,7 @@ const ScheduleScreen = ({ navigation }) => {
       if (currentCell.room) {
         navigation.navigate('Map', { room: currentCell.room });
       } else {
-        Alert.alert('오류', '강연실 정보가 없습니다.');
+        Alert.alert('오류', '강의실 정보가 없습니다.');
       }
       setOptionDialogVisible(false);
     }
@@ -107,6 +111,7 @@ const ScheduleScreen = ({ navigation }) => {
       const currentCell = grid[rowIndex][colIndex];
       setLecture(currentCell.lecture);
       setRoom(currentCell.room);
+      setRoomNumber(currentCell.roomNumber); // 호수 값도 설정
       setDialogVisible(true);
       setOptionDialogVisible(false);
     }
@@ -173,6 +178,7 @@ const ScheduleScreen = ({ navigation }) => {
               >
                 <Text style={styles.cellText}>{cell.lecture}</Text>
                 <Text style={styles.cellRoom}>{cell.room}</Text>
+                <Text style={styles.cellRoomNumber}>{cell.roomNumber}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -188,20 +194,28 @@ const ScheduleScreen = ({ navigation }) => {
           onChangeText={(text) => setLecture(text)}
         />
         <Dialog.Input
-          placeholder="강연실을 입력하세요"
+          placeholder="강의실을 입력하세요"
           value={room}
           onChangeText={(text) => setRoom(text)}
         />
+        <Dialog.Input
+          placeholder="강의실 호수를 입력하세요"
+          value={roomNumber}
+          onChangeText={(text) => setRoomNumber(text)}  // 새 상태 추가
+        />
         <Dialog.Button label="취소" onPress={() => setDialogVisible(false)} />
-        <Dialog.Button label="확인" onPress={() => handleSave(lecture, room)} />
+        <Dialog.Button
+          label="확인"
+          onPress={() => handleSave(lecture, room, roomNumber)}  // 강의명, 강의실, 호수 모두 전달
+        />
       </Dialog.Container>
 
       {/* 옵션 다이얼로그 */}
       <Dialog.Container visible={optionDialogVisible}>
         <Dialog.Title>옵션 선택</Dialog.Title>
-        <Dialog.Button label="삭제" onPress={handleDelete} />
         <Dialog.Button label="수정" onPress={handleEdit} />
-        <Dialog.Button label="강연실 위치 보기" onPress={handleMapNavigation} />
+        <Dialog.Button label="삭제" onPress={handleDelete} />
+        <Dialog.Button label="강의실 위치 보기" onPress={handleMapNavigation} />
         <Dialog.Button label="취소" onPress={() => setOptionDialogVisible(false)} />
       </Dialog.Container>
     </SafeAreaView>
@@ -292,6 +306,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   timePeriod: {
+    fontSize: 12,
+    color: '#666',
+  },
+  cellRoomNumber: {
     fontSize: 12,
     color: '#666',
   },
