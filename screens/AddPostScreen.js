@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { useSignUp } from '../SignUpContext'; // Context에서 데이터 가져오기
 
 export default function AddPostScreen({ route, navigation }) {
   const { post, isEditing } = route.params || {};
+  const { signUpData } = useSignUp(); // 로그인 정보 가져오기
+
   const [title, setTitle] = useState(post ? post.title : ''); // 수정 모드일 경우 초기값 설정
   const [content, setContent] = useState(post ? post.content : ''); // 수정 모드일 경우 초기값 설정
-  const [author, setAuthor] = useState(post ? post.author : '익명'); // 수정 모드일 경우 초기값 설정
+  const [author, setAuthor] = useState(post ? post.author : signUpData.nickname || '익명'); // 로그인된 사용자 닉네임 기본값 설정
   const [password, setPassword] = useState(post ? post.password : ''); // 수정 모드일 경우 초기값 설정
 
   useEffect(() => {
