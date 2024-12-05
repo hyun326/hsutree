@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback,StyleSheet } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import { View, Text, TextInput, TouchableOpacity, Alert, TouchableWithoutFeedback, StyleSheet, ScrollView, Platform, Image } from 'react-native';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+
+// Android 전용 모듈 import
+import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
 
 export default function MapScreen({ navigation, route }) {
@@ -14,28 +16,31 @@ export default function MapScreen({ navigation, route }) {
   };
 
   const [locations, setLocations] = useState([]);
-  const [region, setRegion] = useState(initialRegion);
-  const [currentLocation, setCurrentLocation] = useState(initialRegion); // 현재 위치를 별도로 관리
   const [search, setSearch] = useState('');
-  const [selectedMarker, setSelectedMarker] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
   const [recentSearches, setRecentSearches] = useState([]);
   const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const [region, setRegion] = useState(initialRegion);
+  const [currentLocation, setCurrentLocation] = useState(initialRegion); // 현재 위치를 별도로 관리
   const [mapReady, setMapReady] = useState(false);
   const [locationSubscription, setLocationSubscription] = useState(null);
 
   useEffect(() => {
-    const requestLocationPermission = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('오류', '위치 접근 권한이 거부되었습니다.');
-        return;
-      }
-
-      startLocationTracking();
-    };
-
-    requestLocationPermission();
     fetchLocations();
+
+    if (Platform.OS === 'android') {
+      const requestLocationPermission = async () => {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          Alert.alert('오류', '위치 접근 권한이 거부되었습니다.');
+          return;
+        }
+
+        startLocationTracking();
+      };
+
+      requestLocationPermission();
+    }
 
     return () => {
       if (locationSubscription) {
@@ -49,7 +54,7 @@ export default function MapScreen({ navigation, route }) {
       const subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          timeInterval: 5000, // 5초마다 위치 업데이트
+          timeInterval: 3000, // 3초마다 위치 업데이트
           distanceInterval: 10, // 사용자가 10미터 이상 이동할 때마다 업데이트
         },
         (location) => {
@@ -81,8 +86,8 @@ export default function MapScreen({ navigation, route }) {
     }
   };
 
-  // 특정 강의실의 위치를 찾아 지도 중심으로 설정
-  const focusMapOnRoom = (room) => {
+  // 특정 강의실의 위치를 찾아 선택된 위치로 설정
+  const focusOnRoom = (room) => {
     if (!room) return;
 
     const matchingLocation = locations.find((location) =>
@@ -93,14 +98,7 @@ export default function MapScreen({ navigation, route }) {
     );
 
     if (matchingLocation) {
-      setRegion((prevRegion) => ({
-        ...prevRegion,
-        latitude: matchingLocation.latitude,
-        longitude: matchingLocation.longitude,
-        latitudeDelta: prevRegion.latitudeDelta,
-        longitudeDelta: prevRegion.longitudeDelta,
-      }));
-      setSelectedMarker(matchingLocation);
+      setSelectedLocation(matchingLocation);
     } else {
       Alert.alert('오류', `해당 강의실(${room})의 위치를 찾을 수 없습니다.`);
     }
@@ -108,7 +106,7 @@ export default function MapScreen({ navigation, route }) {
 
   useEffect(() => {
     if (route?.params?.room) {
-      focusMapOnRoom(route.params.room);
+      focusOnRoom(route.params.room);
     }
   }, [route.params, locations]);
 
@@ -129,15 +127,7 @@ export default function MapScreen({ navigation, route }) {
     }
 
     if (selectedFacility) {
-      setRegion((prevRegion) => ({
-        ...prevRegion,
-        latitude: locationMatch.latitude,
-        longitude: locationMatch.longitude,
-        latitudeDelta: prevRegion.latitudeDelta,
-        longitudeDelta: prevRegion.longitudeDelta,
-      }));
-
-      setSelectedMarker({
+      setSelectedLocation({
         title: selectedFacility.name,
         description: `시설물이 위치한 장소: ${locationMatch.title}`,
         imageUrl: selectedFacility.imageUrl || locationMatch.imageUrl,
@@ -148,14 +138,7 @@ export default function MapScreen({ navigation, route }) {
         loc.title.toLowerCase().includes(trimmedSearch) ||
         loc.description.toLowerCase().includes(trimmedSearch)
     ))) {
-      setRegion((prevRegion) => ({
-        ...prevRegion,
-        latitude: locationMatch.latitude,
-        longitude: locationMatch.longitude,
-        latitudeDelta: prevRegion.latitudeDelta,
-        longitudeDelta: prevRegion.longitudeDelta,
-      }));
-      setSelectedMarker(locationMatch);
+      setSelectedLocation(locationMatch);
     } else {
       alert('검색 결과가 없습니다.');
     }
@@ -173,8 +156,8 @@ export default function MapScreen({ navigation, route }) {
   };
 
   const clearSelection = () => {
-    if (selectedMarker) {
-      setSelectedMarker(null);
+    if (selectedLocation) {
+      setSelectedLocation(null);
     }
     setShowRecentSearches(false);
   };
@@ -225,74 +208,28 @@ export default function MapScreen({ navigation, route }) {
             </View>
           )}
         </View>
-        {/* 지도 */}
-        <MapView
-  style={{ flex: 1 }}
-  provider={Platform.OS === 'ios' ? null : 'google'} // iOS는 null로 설정하여 Apple Maps 사용
-  initialRegion={initialRegion}
-  region={region}
-  onMapReady={() => setMapReady(true)}
-  onPress={() => {
-    if (selectedMarker) {
-      setSelectedMarker(null);
-    }
-    setShowRecentSearches(false);
-  }}
->
-          {/* 사용자 위치 커스텀 마커 */}
-          <Marker
-            coordinate={{
-              latitude: currentLocation.latitude,
-              longitude: currentLocation.longitude,
+        {/* 지도 또는 선택된 위치 정보 */}
+        {Platform.OS === 'android' ? (
+          <MapView
+            style={{ flex: 1 }}
+            provider={'google'}
+            initialRegion={initialRegion}
+            region={region}
+            onMapReady={() => setMapReady(true)}
+            onPress={() => {
+              if (selectedLocation) {
+                setSelectedLocation(null);
+              }
+              setShowRecentSearches(false);
             }}
-            onPress={() => setSelectedMarker({ title: '현재 위치', description: '이곳이 현재 위치입니다.' })}
           >
-            <View style={{ alignItems: 'center', overflow: 'visible' }}>
-              <Text
-                style={{
-                  fontSize: 9,
-                  fontWeight: 'bold',
-                  color: 'black',
-                  textAlign: 'center',
-                  flexWrap: 'wrap',
-                }}
-                numberOfLines={0}
-              >
-                현재 위치
-              </Text>
-              <View
-                style={{
-                  width: 10,
-                  height: 10,
-                  backgroundColor: 'green',
-                  borderRadius: 80,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <View
-                  style={{
-                    width: 1,
-                    height: 1,
-                    backgroundColor: 'white',
-                    borderRadius: 10,
-                  }}
-                />
-              </View>
-            </View>
-          </Marker>
-
-          {locations.map((location) => (
+            {/* 사용자 위치 커스텀 마커 */}
             <Marker
-              key={location.id}
               coordinate={{
-                latitude: location.latitude,
-                longitude: location.longitude,
+                latitude: currentLocation.latitude,
+                longitude: currentLocation.longitude,
               }}
-              onPress={() => {
-                setSelectedMarker(location);
-                setShowRecentSearches(false);
-              }}
+              onPress={() => setSelectedLocation({ title: '현재 위치', description: '이곳이 현재 위치입니다.' })}
             >
               <View style={{ alignItems: 'center', overflow: 'visible' }}>
                 <Text
@@ -305,13 +242,13 @@ export default function MapScreen({ navigation, route }) {
                   }}
                   numberOfLines={0}
                 >
-                  {location.title}
+                  현재 위치
                 </Text>
                 <View
                   style={{
-                    width: selectedMarker?.id === location.id ? 20 : 20,
-                    height: selectedMarker?.id === location.id ? 20 : 20,
-                    backgroundColor: selectedMarker?.id === location.id ? 'blue' : 'red',
+                    width: 10,
+                    height: 10,
+                    backgroundColor: 'green',
                     borderRadius: 80,
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -319,8 +256,8 @@ export default function MapScreen({ navigation, route }) {
                 >
                   <View
                     style={{
-                      width: selectedMarker?.id === location.id ? 5 : 5,
-                      height: selectedMarker?.id === location.id ? 5 : 5,
+                      width: 1,
+                      height: 1,
                       backgroundColor: 'white',
                       borderRadius: 10,
                     }}
@@ -328,23 +265,71 @@ export default function MapScreen({ navigation, route }) {
                 </View>
               </View>
             </Marker>
-          ))}
-        </MapView>
 
-        {/* 하단 창 */}
-        {selectedMarker && (
+            {locations.map((location) => (
+              <Marker
+                key={location.id}
+                coordinate={{
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                }}
+                onPress={() => {
+                  setSelectedLocation(location);
+                  setShowRecentSearches(false);
+                }}
+              >
+                <View style={{ alignItems: 'center', overflow: 'visible' }}>
+                  <Text
+                    style={{
+                      fontSize: 9,
+                      fontWeight: 'bold',
+                      color: 'black',
+                      textAlign: 'center',
+                      flexWrap: 'wrap',
+                    }}
+                    numberOfLines={0}
+                  >
+                    {location.title}
+                  </Text>
+                  <View
+                    style={{
+                      width: selectedLocation?.id === location.id ? 20 : 20,
+                      height: selectedLocation?.id === location.id ? 20 : 20,
+                      backgroundColor: selectedLocation?.id === location.id ? 'blue' : 'red',
+                      borderRadius: 80,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: selectedLocation?.id === location.id ? 5 : 5,
+                        height: selectedLocation?.id === location.id ? 5 : 5,
+                        backgroundColor: 'white',
+                        borderRadius: 10,
+                      }}
+                    />
+                  </View>
+                </View>
+              </Marker>
+            ))}
+          </MapView>
+        ) : (
+          <Image source={require('../assets/default.png')} style={{ flex: 1, width: '100%', height: '100%' }} />
+        )}
+        {selectedLocation && (
           <View style={styles.bottomSheet}>
-            <Text style={styles.title}>{selectedMarker.title}</Text>
-            <Text style={styles.description}>{selectedMarker.description}</Text>
-            {selectedMarker.facilities && selectedMarker.facilities.length > 0 && (
+            <Text style={styles.title}>{selectedLocation.title}</Text>
+            <Text style={styles.description}>{selectedLocation.description}</Text>
+            {selectedLocation.facilities && selectedLocation.facilities.length > 0 && (
               <Text style={styles.facilities}>
-                시설물: {selectedMarker.facilities.map((fac) => fac.name).join(', ')}
+                시설물: {selectedLocation.facilities.map((fac) => fac.name).join(', ')}
               </Text>
             )}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => handleReviewNavigation(selectedMarker, selectedMarker.title)}
+                onPress={() => handleReviewNavigation(selectedLocation, selectedLocation.title)}
               >
                 <Text style={styles.buttonText}>리뷰</Text>
               </TouchableOpacity>
