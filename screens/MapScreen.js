@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback, StyleSheet } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { View, Text, TextInput, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback,StyleSheet } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import * as Location from 'expo-location';
@@ -25,7 +25,7 @@ export default function MapScreen({ navigation, route }) {
 
   useEffect(() => {
     const requestLocationPermission = async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
+      const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('오류', '위치 접근 권한이 거부되었습니다.');
         return;
@@ -228,7 +228,7 @@ export default function MapScreen({ navigation, route }) {
         {/* 지도 */}
         <MapView
           style={{ flex: 1 }}
-          provider={Platform.OS === 'ios' ? null : PROVIDER_GOOGLE}
+          provider={Platform.OS === 'ios' ? 'apple' : 'google'} // iOS는 'apple'로 설정하여 Apple Maps 사용
           initialRegion={initialRegion}
           region={region}
           onMapReady={() => setMapReady(true)}
@@ -355,8 +355,6 @@ export default function MapScreen({ navigation, route }) {
     </TouchableWithoutFeedback>
   );
 }
-
-
 
 const styles = StyleSheet.create({
   searchContainer: {
