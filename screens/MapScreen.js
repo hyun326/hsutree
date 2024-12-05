@@ -54,7 +54,7 @@ export default function MapScreen({ navigation, route }) {
       const subscription = await Location.watchPositionAsync(
         {
           accuracy: Location.Accuracy.High,
-          timeInterval: 3000, // 3초마다 위치 업데이트
+          timeInterval: 5000, // 5초마다 위치 업데이트
           distanceInterval: 10, // 사용자가 10미터 이상 이동할 때마다 업데이트
         },
         (location) => {
@@ -99,6 +99,12 @@ export default function MapScreen({ navigation, route }) {
 
     if (matchingLocation) {
       setSelectedLocation(matchingLocation);
+      setRegion({
+        latitude: matchingLocation.latitude,
+        longitude: matchingLocation.longitude,
+        latitudeDelta: 0.0041,
+        longitudeDelta: 0.0040,
+      });
     } else {
       Alert.alert('오류', `해당 강의실(${room})의 위치를 찾을 수 없습니다.`);
     }
@@ -133,12 +139,24 @@ export default function MapScreen({ navigation, route }) {
         imageUrl: selectedFacility.imageUrl || locationMatch.imageUrl,
         facilities: [selectedFacility],
       });
+      setRegion({
+        latitude: locationMatch.latitude,
+        longitude: locationMatch.longitude,
+        latitudeDelta: 0.0041,
+        longitudeDelta: 0.0040,
+      });
     } else if ((locationMatch = locations.find(
       (loc) =>
         loc.title.toLowerCase().includes(trimmedSearch) ||
         loc.description.toLowerCase().includes(trimmedSearch)
     ))) {
       setSelectedLocation(locationMatch);
+      setRegion({
+        latitude: locationMatch.latitude,
+        longitude: locationMatch.longitude,
+        latitudeDelta: 0.0041,
+        longitudeDelta: 0.0040,
+      });
     } else {
       alert('검색 결과가 없습니다.');
     }
