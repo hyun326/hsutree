@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback,StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
@@ -228,7 +228,7 @@ export default function MapScreen({ navigation, route }) {
         {/* 지도 */}
         <MapView
           style={{ flex: 1 }}
-          provider={Platform.OS === 'ios' ? 'apple' : 'google'} // iOS는 'apple'로 설정하여 Apple Maps 사용
+          provider={Platform.OS === 'ios' ? null : 'google'} // iOS는 null로 설정하여 Apple Maps 사용
           initialRegion={initialRegion}
           region={region}
           onMapReady={() => setMapReady(true)}
@@ -245,42 +245,9 @@ export default function MapScreen({ navigation, route }) {
               latitude: currentLocation.latitude,
               longitude: currentLocation.longitude,
             }}
-            onPress={() => setSelectedMarker({ title: '현재 위치', description: '이곳이 현재 위치입니다.' })}
-          >
-            <View style={{ alignItems: 'center', overflow: 'visible' }}>
-              <Text
-                style={{
-                  fontSize: 9,
-                  fontWeight: 'bold',
-                  color: 'black',
-                  textAlign: 'center',
-                  flexWrap: 'wrap',
-                }}
-                numberOfLines={0}
-              >
-                현재 위치
-              </Text>
-              <View
-                style={{
-                  width: 10,
-                  height: 10,
-                  backgroundColor: 'green',
-                  borderRadius: 80,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <View
-                  style={{
-                    width: 1,
-                    height: 1,
-                    backgroundColor: 'white',
-                    borderRadius: 10,
-                  }}
-                />
-              </View>
-            </View>
-          </Marker>
+            title="현재 위치"
+            description="이곳이 현재 위치입니다."
+          />
 
           {locations.map((location) => (
             <Marker
@@ -289,45 +256,13 @@ export default function MapScreen({ navigation, route }) {
                 latitude: location.latitude,
                 longitude: location.longitude,
               }}
+              title={location.title}
+              description={location.description}
               onPress={() => {
                 setSelectedMarker(location);
                 setShowRecentSearches(false);
               }}
-            >
-              <View style={{ alignItems: 'center', overflow: 'visible' }}>
-                <Text
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 'bold',
-                    color: 'black',
-                    textAlign: 'center',
-                    flexWrap: 'wrap',
-                  }}
-                  numberOfLines={0}
-                >
-                  {location.title}
-                </Text>
-                <View
-                  style={{
-                    width: selectedMarker?.id === location.id ? 20 : 20,
-                    height: selectedMarker?.id === location.id ? 20 : 20,
-                    backgroundColor: selectedMarker?.id === location.id ? 'blue' : 'red',
-                    borderRadius: 80,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}
-                >
-                  <View
-                    style={{
-                      width: selectedMarker?.id === location.id ? 5 : 5,
-                      height: selectedMarker?.id === location.id ? 5 : 5,
-                      backgroundColor: 'white',
-                      borderRadius: 10,
-                    }}
-                  />
-                </View>
-              </View>
-            </Marker>
+            />
           ))}
         </MapView>
 
