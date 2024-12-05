@@ -8,8 +8,6 @@ const ScheduleScreen = ({ navigation }) => {
   const days = ['월', '화', '수', '목', '금'];
   const [roomNumber, setRoomNumber] = useState('');  // 새 상태 추가
 
-  const viewShotRef = useRef();
-
   const timeTable = [
     '09:00 ~ 09:50',
     '10:00 ~ 10:50',
@@ -125,15 +123,23 @@ const ScheduleScreen = ({ navigation }) => {
 
   const shareSchedule = () => {
     try {
-      const message = '시간표를 공유합니다.';
+      console.log('캡처 및 공유 시작');
+
+      // 시간표의 모든 정보를 문자열로 정리
+      let scheduleText = '나의 시간표:\n';
+      grid.forEach((row, rowIndex) => {
+        row.forEach((cell, colIndex) => {
+          if (cell.lecture || cell.room) {
+            scheduleText += `${days[colIndex]}요일 ${timeTable[rowIndex]}: ${cell.lecture} (${cell.room})\n`;
+          }
+        });
+      });
+
       Share.share({
-        message,
-      }).then((result) => {
-        if (result.action === Share.sharedAction) {
-          console.log('공유 성공');
-        } else if (result.action === Share.dismissedAction) {
-          console.log('공유 취소');
-        }
+        message: scheduleText || '시간표에 등록된 내용이 없습니다.',
+      }).catch((error) => {
+        console.error('공유 실패:', error);
+        Alert.alert('오류', '공유 중 문제가 발생했습니다.');
       });
     } catch (error) {
       console.error('공유 실패:', error);
@@ -155,7 +161,7 @@ const ScheduleScreen = ({ navigation }) => {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.table} ref={viewShotRef}>
+      <ScrollView contentContainerStyle={styles.table}>
         <View style={styles.headerRow}>
           <View style={styles.timeLabel} />
           {days.map((day, index) => (
@@ -266,11 +272,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  viewShot: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    marginBottom: 20,
-  },
   table: {
     flexGrow: 1,
     padding: 5,
@@ -324,9 +325,6 @@ const styles = StyleSheet.create({
   cellText: {
     fontSize: 12,
     fontWeight: 'bold',
-  },
-  cellRoom: {
-    fontSize: 12,
   },
 });
 

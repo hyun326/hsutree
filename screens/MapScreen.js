@@ -227,18 +227,18 @@ export default function MapScreen({ navigation, route }) {
         </View>
         {/* 지도 */}
         <MapView
-          style={{ flex: 1 }}
-          provider={Platform.OS === 'ios' ? 'apple' : 'google'} // iOS는 'apple'로 설정하여 Apple Maps 사용
-          initialRegion={initialRegion}
-          region={region}
-          onMapReady={() => setMapReady(true)}
-          onPress={() => {
-            if (selectedMarker) {
-              setSelectedMarker(null);
-            }
-            setShowRecentSearches(false);
-          }}
-        >
+  style={{ flex: 1 }}
+  provider={Platform.OS === 'ios' ? null : 'google'} // iOS는 null로 설정하여 Apple Maps 사용
+  initialRegion={initialRegion}
+  region={region}
+  onMapReady={() => setMapReady(true)}
+  onPress={() => {
+    if (selectedMarker) {
+      setSelectedMarker(null);
+    }
+    setShowRecentSearches(false);
+  }}
+>
           {/* 사용자 위치 커스텀 마커 */}
           <Marker
             coordinate={{
