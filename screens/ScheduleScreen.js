@@ -1,4 +1,8 @@
-import React, { useState, useRef } from 'react';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebaseConfig'; // Firebase 설정 파일 import
+import { useSignUp } from '../SignUpContext'; // 로그인 정보를 가져오기 위한 Context
+import { useEffect } from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, SafeAreaView, Share } from 'react-native';
 import Dialog from 'react-native-dialog';
 
@@ -7,6 +11,7 @@ const ScheduleScreen = ({ navigation }) => {
   const cols = 5;
   const days = ['월', '화', '수', '목', '금'];
   const [roomNumber, setRoomNumber] = useState('');  // 새 상태 추가
+  const { signUpData } = useSignUp(); // 로그인된 사용자 정보 가져오기
 
   const timeTable = [
     '09:00 ~ 09:50',
@@ -28,6 +33,67 @@ const ScheduleScreen = ({ navigation }) => {
   const [grid, setGrid] = useState(
     Array.from({ length: rows }, () => Array(cols).fill({ lecture: '', room: '', color: '#FFFFFF' }))
   );
+
+  const saveScheduleToFirestore = async () => {
+    const scheduleData = grid.flatMap((row, rowIndex) =>
+      row.map((cell, colIndex) => {
+        if (cell.lecture || cell.room || cell.roomNumber) {
+          return {
+            row: rowIndex,
+            col: colIndex,
+            lecture: cell.lecture,
+            room: cell.room,
+            roomNumber: cell.roomNumber,
+            color: cell.color,
+          };
+        }
+        return null;
+      }).filter(Boolean) // 비어있는 셀 제거
+    );
+  
+    try {
+      const userDoc = doc(db, 'schedules', signUpData.studentId); // 학번 기반 문서
+      await setDoc(userDoc, {
+        scheduleData,
+        updatedAt: serverTimestamp(), // 마지막 업데이트 시간 저장
+      });
+  
+      Alert.alert('성공', '시간표가 저장되었습니다.');
+    } catch (error) {
+      console.error('시간표 저장 오류:', error);
+      Alert.alert('오류', '시간표 저장 중 문제가 발생했습니다.');
+    }
+  };
+
+  const loadScheduleFromFirestore = async () => {
+    try {
+      const userDoc = doc(db, 'schedules', signUpData.studentId); // 학번을 키로 사용
+      const docSnap = await getDoc(userDoc);
+  
+      if (docSnap.exists()) {
+        const { scheduleData } = docSnap.data(); // Firestore의 데이터 읽기
+        const newGrid = Array.from({ length: rows }, () =>
+          Array(cols).fill({ lecture: '', room: '', roomNumber: '', color: '#FFFFFF' })
+        );
+  
+        // Firestore 데이터를 grid에 매핑
+        scheduleData.forEach(({ row, col, lecture, room, roomNumber, color }) => {
+          newGrid[row][col] = { lecture, room, roomNumber, color };
+        });
+  
+        setGrid(newGrid); // 상태 업데이트
+      } else {
+        Alert.alert('정보 없음', '해당 학번의 시간표 데이터를 찾을 수 없습니다.');
+      }
+    } catch (error) {
+      console.error('시간표 불러오기 오류:', error);
+      Alert.alert('오류', '시간표 불러오기 중 문제가 발생했습니다.');
+    }
+  };
+  
+  useEffect(() => {
+    loadScheduleFromFirestore(); // Firestore에서 데이터 불러오기
+  }, []);
 
   const [dialogVisible, setDialogVisible] = useState(false);
   const [selectedCell, setSelectedCell] = useState(null);
@@ -152,6 +218,9 @@ const ScheduleScreen = ({ navigation }) => {
       <View style={[styles.headerContainer, { paddingTop: 30 }]}>
         <Text style={styles.title}>시간표 관리</Text>
         <View style={styles.buttonContainer}>
+           <TouchableOpacity style={styles.saveButton} onPress={saveScheduleToFirestore}>
+            <Text style={styles.saveButtonText}>저장</Text>
+            </TouchableOpacity>
           <TouchableOpacity style={styles.shareButton} onPress={shareSchedule}>
             <Text style={styles.shareButtonText}>공유</Text>
           </TouchableOpacity>
@@ -250,7 +319,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   shareButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#90EE90',
     paddingVertical: 5,
     paddingHorizontal: 15,
     borderRadius: 5,
@@ -262,7 +331,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   resetButton: {
-    backgroundColor: '#FF6666',
+    backgroundColor: '#FF7F7F',
     paddingVertical: 5,
     paddingHorizontal: 15,
     borderRadius: 5,
@@ -314,6 +383,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
+  cellRoom: {
+    fontSize: 12,
+  },
   cell: {
     flex: 1,
     padding: 8,
@@ -323,7 +395,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cellText: {
-    fontSize: 12,
+    fontSize: 7,
+    fontWeight: 'bold',
+    textAlign: 'center', // 텍스트 수평 가운데 정렬
+  },
+  saveButton: {
+    backgroundColor: '#87CEEB',
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });
