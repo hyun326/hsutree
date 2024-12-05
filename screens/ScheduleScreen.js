@@ -1,15 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView, SafeAreaView, Share, Platform } from 'react-native';
 import Dialog from 'react-native-dialog';
-import ViewShot from 'react-native-view-shot';
-import * as Sharing from 'expo-sharing';
 
 const ScheduleScreen = ({ navigation }) => {
   const rows = 14;
   const cols = 5;
   const days = ['월', '화', '수', '목', '금'];
-
-  const viewShotRef = useRef();
 
   const timeTable = [
     '09:00 ~ 09:50',
@@ -95,7 +91,7 @@ const ScheduleScreen = ({ navigation }) => {
       if (currentCell.room) {
         navigation.navigate('Map', { room: currentCell.room });
       } else {
-        Alert.alert('오류', '강의실 정보가 없습니다.');
+        Alert.alert('오류', '강연실 정보가 없습니다.');
       }
       setOptionDialogVisible(false);
     }
@@ -118,14 +114,26 @@ const ScheduleScreen = ({ navigation }) => {
     Alert.alert('성공', '시간표가 초기화되었습니다.');
   };
 
-  const captureAndShare = async () => {
+  const shareSchedule = () => {
     try {
-      const uri = await viewShotRef.current.capture();
-      if (uri) {
-        await Sharing.shareAsync(uri);
-      } else {
-        Alert.alert('오류', '스크린샷을 생성할 수 없습니다.');
-      }
+      console.log('캡처 및 공유 시작');
+
+      // 시간표의 모든 정보를 문자열로 정리
+      let scheduleText = '나의 시간표:\n';
+      grid.forEach((row, rowIndex) => {
+        row.forEach((cell, colIndex) => {
+          if (cell.lecture || cell.room) {
+            scheduleText += `${days[colIndex]}요일 ${timeTable[rowIndex]}: ${cell.lecture} (${cell.room})\n`;
+          }
+        });
+      });
+
+      Share.share({
+        message: scheduleText || '시간표에 등록된 내용이 없습니다.',
+      }).catch((error) => {
+        console.error('공유 실패:', error);
+        Alert.alert('오류', '공유 중 문제가 발생했습니다.');
+      });
     } catch (error) {
       console.error('공유 실패:', error);
       Alert.alert('오류', '공유 중 문제가 발생했습니다.');
@@ -133,11 +141,11 @@ const ScheduleScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={[styles.headerContainer, { paddingTop: 30 }]}>
         <Text style={styles.title}>시간표 관리</Text>
         <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.shareButton} onPress={captureAndShare}>
+          <TouchableOpacity style={styles.shareButton} onPress={shareSchedule}>
             <Text style={styles.shareButtonText}>공유</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.resetButton} onPress={handleResetSchedule}>
@@ -146,36 +154,34 @@ const ScheduleScreen = ({ navigation }) => {
         </View>
       </View>
 
-      <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }} style={styles.viewShot}>
-        <ScrollView contentContainerStyle={styles.table}>
-          <View style={styles.headerRow}>
-            <View style={styles.timeLabel} />
-            {days.map((day, index) => (
-              <View key={index} style={styles.headerCell}>
-                <Text style={styles.headerText}>{day}</Text>
-              </View>
-            ))}
-          </View>
-          {grid.map((row, rowIndex) => (
-            <View key={rowIndex} style={styles.row}>
-              <View style={styles.timeLabel}>
-                <Text style={styles.timeText}>{`${rowIndex + 1}교시`}</Text>
-                <Text style={styles.timePeriod}>{timeTable[rowIndex]}</Text>
-              </View>
-              {row.map((cell, colIndex) => (
-                <TouchableOpacity
-                  key={colIndex}
-                  style={[styles.cell, { backgroundColor: cell.color }]}
-                  onPress={() => handleCellPress(rowIndex, colIndex)}
-                >
-                  <Text style={styles.cellText}>{cell.lecture}</Text>
-                  <Text style={styles.cellRoom}>{cell.room}</Text>
-                </TouchableOpacity>
-              ))}
+      <ScrollView contentContainerStyle={styles.table}>
+        <View style={styles.headerRow}>
+          <View style={styles.timeLabel} />
+          {days.map((day, index) => (
+            <View key={index} style={styles.headerCell}>
+              <Text style={styles.headerText}>{day}</Text>
             </View>
           ))}
-        </ScrollView>
-      </ViewShot>
+        </View>
+        {grid.map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            <View style={styles.timeLabel}>
+              <Text style={styles.timeText}>{`${rowIndex + 1}교시`}</Text>
+              <Text style={styles.timePeriod}>{timeTable[rowIndex]}</Text>
+            </View>
+            {row.map((cell, colIndex) => (
+              <TouchableOpacity
+                key={colIndex}
+                style={[styles.cell, { backgroundColor: cell.color }]}
+                onPress={() => handleCellPress(rowIndex, colIndex)}
+              >
+                <Text style={styles.cellText}>{cell.lecture}</Text>
+                <Text style={styles.cellRoom}>{cell.room}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ))}
+      </ScrollView>
 
       {/* 강의 추가/수정 다이얼로그 */}
       <Dialog.Container visible={dialogVisible}>
@@ -186,7 +192,7 @@ const ScheduleScreen = ({ navigation }) => {
           onChangeText={(text) => setLecture(text)}
         />
         <Dialog.Input
-          placeholder="강의실을 입력하세요"
+          placeholder="강연실을 입력하세요"
           value={room}
           onChangeText={(text) => setRoom(text)}
         />
@@ -199,10 +205,10 @@ const ScheduleScreen = ({ navigation }) => {
         <Dialog.Title>옵션 선택</Dialog.Title>
         <Dialog.Button label="삭제" onPress={handleDelete} />
         <Dialog.Button label="수정" onPress={handleEdit} />
-        <Dialog.Button label="강의실 위치 보기" onPress={handleMapNavigation} />
+        <Dialog.Button label="강연실 위치 보기" onPress={handleMapNavigation} />
         <Dialog.Button label="취소" onPress={() => setOptionDialogVisible(false)} />
       </Dialog.Container>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -249,11 +255,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: 'bold',
-  },
-  viewShot: {
-    flex: 1,
-    backgroundColor: '#FFF',
-    marginBottom: 20,
   },
   table: {
     flexGrow: 1,
@@ -304,9 +305,6 @@ const styles = StyleSheet.create({
   cellText: {
     fontSize: 12,
     fontWeight: 'bold',
-  },
-  cellRoom: {
-    fontSize: 12,
   },
 });
 
