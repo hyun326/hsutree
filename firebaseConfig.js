@@ -3,6 +3,7 @@ import { initializeApp } from "firebase/app"; // Firebase 앱 초기화 함수
 import { getAuth } from "firebase/auth"; // Firebase Authentication (사용자 인증) 기능
 import { getFirestore } from "firebase/firestore"; // Firebase Firestore (실시간 데이터베이스) 기능
 import { getStorage } from "firebase/storage"; // Firebase Storage (파일 업로드/다운로드) 기능
+import AsyncStorage from '@react-native-async-storage/async-storage'; // AsyncStorage 라이브러리
 
 // Firebase 설정 정보 (Firebase 콘솔에서 제공된 설정 값을 입력)
 // Firebase 프로젝트에 연결하기 위한 고유 정보입니다.
