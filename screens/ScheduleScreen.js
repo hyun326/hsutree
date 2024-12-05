@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import Dialog from 'react-native-dialog';
+import ViewShot from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 
 const ScheduleScreen = ({ navigation }) => {
   const rows = 14;
   const cols = 5;
   const days = ['월', '화', '수', '목', '금'];
+
+  const viewShotRef = useRef();
 
   const timeTable = [
     '09:00 ~ 09:50',
@@ -114,14 +118,59 @@ const ScheduleScreen = ({ navigation }) => {
     Alert.alert('성공', '시간표가 초기화되었습니다.');
   };
 
+  const captureAndShare = async () => {
+    try {
+      const uri = await viewShotRef.current.capture();
+      await Sharing.shareAsync(uri);
+    } catch (error) {
+      console.error('공유 실패:', error);
+    }
+  };
+
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={[styles.headerContainer, { paddingTop: 30 }]}>
         <Text style={styles.title}>시간표 관리</Text>
-        <TouchableOpacity style={styles.resetButton} onPress={handleResetSchedule}>
-          <Text style={styles.resetButtonText}>초기화</Text>
-        </TouchableOpacity>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.shareButton} onPress={captureAndShare}>
+            <Text style={styles.shareButtonText}>공유</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.resetButton} onPress={handleResetSchedule}>
+            <Text style={styles.resetButtonText}>초기화</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }}>
+        <View style={styles.table}>
+          <View style={styles.headerRow}>
+            <View style={styles.timeLabel} />
+            {days.map((day, index) => (
+              <View key={index} style={styles.headerCell}>
+                <Text style={styles.headerText}>{day}</Text>
+              </View>
+            ))}
+          </View>
+          {grid.map((row, rowIndex) => (
+            <View key={rowIndex} style={styles.row}>
+              <View style={styles.timeLabel}>
+                <Text style={styles.timeText}>{`${rowIndex + 1}교시`}</Text>
+                <Text style={styles.timePeriod}>{timeTable[rowIndex]}</Text>
+              </View>
+              {row.map((cell, colIndex) => (
+                <TouchableOpacity
+                  key={colIndex}
+                  style={[styles.cell, { backgroundColor: cell.color }]}
+                  onPress={() => handleCellPress(rowIndex, colIndex)}
+                >
+                  <Text style={styles.cellText}>{cell.lecture}</Text>
+                  <Text style={styles.cellRoom}>{cell.room}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ))}
+        </View>
+      </ViewShot>
 
       {/* 강의 추가/수정 다이얼로그 */}
       <Dialog.Container visible={dialogVisible}>
@@ -148,35 +197,6 @@ const ScheduleScreen = ({ navigation }) => {
         <Dialog.Button label="강의실 위치 보기" onPress={handleMapNavigation} />
         <Dialog.Button label="취소" onPress={() => setOptionDialogVisible(false)} />
       </Dialog.Container>
-
-      <View style={styles.table}>
-        <View style={styles.headerRow}>
-          <View style={styles.timeLabel} />
-          {days.map((day, index) => (
-            <View key={index} style={styles.headerCell}>
-              <Text style={styles.headerText}>{day}</Text>
-            </View>
-          ))}
-        </View>
-        {grid.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
-            <View style={styles.timeLabel}>
-              <Text style={styles.timeText}>{`${rowIndex + 1}교시`}</Text>
-              <Text style={styles.timePeriod}>{timeTable[rowIndex]}</Text>
-            </View>
-            {row.map((cell, colIndex) => (
-              <TouchableOpacity
-                key={colIndex}
-                style={[styles.cell, { backgroundColor: cell.color }]}
-                onPress={() => handleCellPress(rowIndex, colIndex)}
-              >
-                <Text style={styles.cellText}>{cell.lecture}</Text>
-                <Text style={styles.cellRoom}>{cell.room}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ))}
-      </View>
     </ScrollView>
   );
 };
@@ -197,6 +217,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  shareButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  shareButtonText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   resetButton: {
     backgroundColor: '#FF6666',

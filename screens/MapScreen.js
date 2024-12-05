@@ -1,69 +1,70 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback, PermissionsAndroid ,StyleSheet} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Platform, Alert, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
-import Geolocation from 'react-native-geolocation-service';
+import * as Location from 'expo-location';
 
 export default function MapScreen({ navigation, route }) {
-  const [locations, setLocations] = useState([]);
-  const [region, setRegion] = useState({
+  const initialRegion = {
     latitude: 37.582300,
     longitude: 127.010180,
     latitudeDelta: 0.0041,
     longitudeDelta: 0.0040,
-  });
+  };
+
+  const [locations, setLocations] = useState([]);
+  const [region, setRegion] = useState(initialRegion);
   const [search, setSearch] = useState('');
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [recentSearches, setRecentSearches] = useState([]);
-  const [showRecentSearches, setShowRecentSearches] = useState(true);
+  const [showRecentSearches, setShowRecentSearches] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  const [locationSubscription, setLocationSubscription] = useState(null); // 위치 추적 구독 저장
 
   useEffect(() => {
     const requestLocationPermission = async () => {
-      if (Platform.OS === 'android') {
-        try {
-          const granted = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-            {
-              title: '위치 접근 권한 요청',
-              message: '현재 위치를 사용하려면 위치 접근 권한이 필요합니다.',
-              buttonNeutral: '나중에 묻기',
-              buttonNegative: '취소',
-              buttonPositive: '허용',
-            }
-          );
-          if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-            getCurrentLocation();
-          } else {
-            console.log('위치 접근 권한이 거부되었습니다.');
-          }
-        } catch (err) {
-          console.warn(err);
-        }
-      } else {
-        getCurrentLocation();
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('오류', '위치 접근 권한이 거부되었습니다.');
+        return;
       }
+
+      startLocationTracking();
     };
 
     requestLocationPermission();
     fetchLocations();
+
+    return () => {
+      // 컴포넌트 언마운트 시 위치 추적 중지
+      if (locationSubscription) {
+        locationSubscription.remove();
+      }
+    };
   }, []);
 
-  const getCurrentLocation = () => {
-    Geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        setRegion((prevRegion) => ({
-          ...prevRegion,
-          latitude,
-          longitude,
-        }));
-      },
-      (error) => {
-        console.error('현재 위치를 가져오는 데 실패했습니다:', error);
-      },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-    );
+  const startLocationTracking = async () => {
+    try {
+      const subscription = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: 5000, // 5초마다 위치 업데이트
+          distanceInterval: 10, // 사용자가 10미터 이상 이동할 때마다 업데이트
+        },
+        (location) => {
+          const { latitude, longitude } = location.coords;
+          setRegion((prevRegion) => ({
+            ...prevRegion,
+            latitude,
+            longitude,
+          }));
+        }
+      );
+      setLocationSubscription(subscription);
+    } catch (error) {
+      console.error('위치 추적 시작에 실패했습니다:', error);
+    }
   };
 
   // Firestore에서 데이터 검색
@@ -86,18 +87,19 @@ export default function MapScreen({ navigation, route }) {
 
     const matchingLocation = locations.find((location) =>
       location.facilities.some((facility) =>
-        facility.toLowerCase().includes(room.toLowerCase().trim())
+        facility.name.toLowerCase().includes(room.toLowerCase().trim())
       ) ||
       location.title.toLowerCase().includes(room.toLowerCase().trim())
     );
 
     if (matchingLocation) {
-      setRegion({
+      setRegion((prevRegion) => ({
+        ...prevRegion,
         latitude: matchingLocation.latitude,
         longitude: matchingLocation.longitude,
-        latitudeDelta: 0.0041,
-        longitudeDelta: 0.0040,
-      });
+        latitudeDelta: prevRegion.latitudeDelta,
+        longitudeDelta: prevRegion.longitudeDelta,
+      }));
       setSelectedMarker(matchingLocation);
     } else {
       Alert.alert('오류', `해당 강의실(${room})의 위치를 찾을 수 없습니다.`);
@@ -111,40 +113,48 @@ export default function MapScreen({ navigation, route }) {
   }, [route.params, locations]);
 
   // 검색 기능
-  const handleSearch = () => {
-    const trimmedSearch = search.trim();
+  const handleSearch = (searchTerm) => {
+    const trimmedSearch = searchTerm.trim().toLowerCase();
+    let selectedFacility = null;
+    let locationMatch = null;
 
-    const facilitiesMatch = locations.filter((loc) =>
-      loc.facilities.some((facility) =>
-        facility.toLowerCase().includes(trimmedSearch.toLowerCase())
-      )
-    );
+    for (const location of locations) {
+      selectedFacility = location.facilities.find((facility) =>
+        facility.name.toLowerCase().includes(trimmedSearch)
+      );
+      if (selectedFacility) {
+        locationMatch = location;
+        break;
+      }
+    }
 
-    const locationMatch = locations.find(
-      (loc) =>
-        loc.title.includes(trimmedSearch) ||
-        loc.description.includes(trimmedSearch)
-    );
-
-    if (facilitiesMatch.length > 0) {
-      const combinedDescription = facilitiesMatch.map((loc) => loc.title).join(', ');
-
-      setRegion({
-        ...region,
-        latitude: facilitiesMatch[0].latitude,
-        longitude: facilitiesMatch[0].longitude,
-      });
-      setSelectedMarker({
-        title: `${trimmedSearch}`,
-        description: `시설물이 위치한 장소: ${combinedDescription}`,
-        facilities: facilitiesMatch.map((loc) => loc.facilities).flat(),
-      });
-    } else if (locationMatch) {
-      setRegion({
-        ...region,
+    if (selectedFacility) {
+      setRegion((prevRegion) => ({
+        ...prevRegion,
         latitude: locationMatch.latitude,
         longitude: locationMatch.longitude,
+        latitudeDelta: prevRegion.latitudeDelta,
+        longitudeDelta: prevRegion.longitudeDelta,
+      }));
+
+      setSelectedMarker({
+        title: selectedFacility.name,
+        description: `시설물이 위치한 장소: ${locationMatch.title}`,
+        imageUrl: selectedFacility.imageUrl || locationMatch.imageUrl,
+        facilities: [selectedFacility],
       });
+    } else if ((locationMatch = locations.find(
+      (loc) =>
+        loc.title.toLowerCase().includes(trimmedSearch) ||
+        loc.description.toLowerCase().includes(trimmedSearch)
+    ))) {
+      setRegion((prevRegion) => ({
+        ...prevRegion,
+        latitude: locationMatch.latitude,
+        longitude: locationMatch.longitude,
+        latitudeDelta: prevRegion.latitudeDelta,
+        longitudeDelta: prevRegion.longitudeDelta,
+      }));
       setSelectedMarker(locationMatch);
     } else {
       alert('검색 결과가 없습니다.');
@@ -155,12 +165,40 @@ export default function MapScreen({ navigation, route }) {
         [...new Set([trimmedSearch, ...prev])].slice(0, 5)
       );
     }
-    setShowRecentSearches(true);
+  };
+
+  // 최근 검색어 클릭 시 텍스트만 설정
+  const handleRecentSearch = (item) => {
+    setSearch(item);
   };
 
   const clearSelection = () => {
-    setSelectedMarker(null);
+    if (selectedMarker) {
+      setSelectedMarker(null);
+    }
     setShowRecentSearches(false);
+  };
+
+  const handleReviewNavigation = (location, facilityName) => {
+    let facility = location.facilities.find((fac) => fac.name === facilityName);
+
+    if (facility) {
+      facility = {
+        ...facility,
+        title: facilityName,
+        description: location.description,
+        imageUrl: facility.imageUrl || location.imageUrl,
+      };
+    } else {
+      facility = {
+        title: location.title,
+        description: location.description,
+        facilities: location.facilities,
+        imageUrl: location.imageUrl,
+      };
+    }
+
+    navigation.navigate('ReviewScreen', { facility });
   };
 
   return (
@@ -174,32 +212,34 @@ export default function MapScreen({ navigation, route }) {
             value={search}
             onChangeText={setSearch}
             onFocus={() => setShowRecentSearches(true)}
-            onSubmitEditing={handleSearch}
+            onSubmitEditing={() => handleSearch(search)}
           />
           {showRecentSearches && recentSearches.length > 0 && (
             <View style={styles.recentSearchContainer}>
               <Text style={styles.recentTitle}>최근 검색어</Text>
               {recentSearches.map((item, index) => (
-                <TouchableOpacity key={index} onPress={() => {
-                  setSearch(item);
-                  handleSearch();
-                }}>
+                <TouchableOpacity key={index} onPress={() => handleRecentSearch(item)}>
                   <Text style={styles.recentItem}>{item}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
         </View>
-
         {/* 지도 */}
         <MapView
           style={{ flex: 1 }}
           provider={Platform.OS === 'ios' ? null : PROVIDER_GOOGLE}
+          initialRegion={initialRegion}
           region={region}
-          onRegionChangeComplete={(newRegion) => setRegion(newRegion)}
-          onPress={clearSelection}
+          onMapReady={() => setMapReady(true)}
+          onPress={() => {
+            if (selectedMarker) {
+              setSelectedMarker(null);
+            }
+            setShowRecentSearches(false);
+          }}
         >
-          {/* 사용자 위치 마커 추가 */}
+          {/* 사용자 위치 커스텀 마커 */}
           <Marker
             coordinate={{
               latitude: region.latitude,
@@ -249,7 +289,10 @@ export default function MapScreen({ navigation, route }) {
                 latitude: location.latitude,
                 longitude: location.longitude,
               }}
-              onPress={() => setSelectedMarker(location)}
+              onPress={() => {
+                setSelectedMarker(location);
+                setShowRecentSearches(false);
+              }}
             >
               <View style={{ alignItems: 'center', overflow: 'visible' }}>
                 <Text
@@ -295,21 +338,13 @@ export default function MapScreen({ navigation, route }) {
             <Text style={styles.description}>{selectedMarker.description}</Text>
             {selectedMarker.facilities && selectedMarker.facilities.length > 0 && (
               <Text style={styles.facilities}>
-                시설물: {selectedMarker.facilities.join(', ')}
+                시설물: {selectedMarker.facilities.map((fac) => fac.name).join(', ')}
               </Text>
             )}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => {
-                  navigation.navigate('ReviewScreen', {
-                    facility: {
-                      title: selectedMarker.title,
-                      description: selectedMarker.description,
-                      facilities: selectedMarker.facilities,
-                    },
-                  });
-                }}
+                onPress={() => handleReviewNavigation(selectedMarker, selectedMarker.title)}
               >
                 <Text style={styles.buttonText}>리뷰</Text>
               </TouchableOpacity>
@@ -320,6 +355,7 @@ export default function MapScreen({ navigation, route }) {
     </TouchableWithoutFeedback>
   );
 }
+
 
 
 const styles = StyleSheet.create({

@@ -15,8 +15,13 @@ export default function ReviewScreen({ route, navigation }) {
     );
   }
 
-  const { title, description } = facility;
+  const { title, description, imageUrl, facilities } = facility;
   const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    console.log('ReviewScreen facility object:', facility);
+  }, [facility]);
+  
 
   // Firestore에서 리뷰 가져오기 함수
   const fetchReviews = async () => {
@@ -39,6 +44,30 @@ export default function ReviewScreen({ route, navigation }) {
     }, [title])
   );
 
+  const renderImage = () => {
+    if (imageUrl) {
+      console.log('Displaying facility image from URL:', imageUrl);
+      return (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.facilityImage}
+          onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
+        />
+      );
+    }
+  
+    // 기본 이미지 사용
+    return (
+      <Image
+        source={require('../assets/logo.png')}
+        style={styles.facilityImage}
+        onError={(error) => console.log('Image load error:', error.nativeEvent.error)}
+      />
+    );
+  };
+  
+  
+
   const renderReview = ({ item }) => (
     <View style={styles.reviewCard}>
       <Text style={styles.reviewUser}>{item.user}</Text>
@@ -50,10 +79,7 @@ export default function ReviewScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={require('../assets/logo.png')}
-        style={styles.facilityImage}
-      />
+      {renderImage()}
       <View style={styles.facilityInfo}>
         <Text style={styles.facilityName}>{title}</Text>
         <Text style={styles.facilityDescription}>{description}</Text>
@@ -74,6 +100,7 @@ export default function ReviewScreen({ route, navigation }) {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
