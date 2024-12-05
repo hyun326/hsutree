@@ -81,7 +81,7 @@ export default function AddPostScreen({ route, navigation }) {
       <Text style={styles.label}>작성자</Text>
       <TextInput
         style={styles.input}
-        placeholder="작성자를 입력하세요 (기본값: 익명)"
+        placeholder="작성자를 입력하세요 (기본값: 닉네임)"
         value={author}
         onChangeText={setAuthor}
       />
